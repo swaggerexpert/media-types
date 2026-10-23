@@ -1,0 +1,59 @@
+; Hypertext Transfer Protocol (HTTP) Semantics ABNF syntax
+; https://www.rfc-editor.org/rfc/rfc9110
+; Rules are taken from the body of RFC 9110 (not from the collected ABNF in Appendix A)
+; https://www.rfc-editor.org/errata/eid9164
+
+; https://www.rfc-editor.org/rfc/rfc9110#section-12.5.1
+; Accept = #( media-range [ weight ] )
+Accept          = [ ( media-range [ weight ] ) ] *( OWS "," OWS [ ( media-range [ weight ] ) ] )
+                ; list syntax expanded per recipient requirements
+                ; https://www.rfc-editor.org/rfc/rfc9110#section-5.6.1.2
+
+; https://www.rfc-editor.org/rfc/rfc9110#section-12.5.1
+media-range     = ( ( type "/" subtype ) / ( type "/" "*" ) / "*/*" ) parameters
+                ; MODIFICATION: alternatives reordered from ( "*/*" / ( type "/" "*" ) / ( type "/" subtype ) )
+                ; Alternatives are ordered (first match wins), and the original order would reject
+                ; valid media ranges like "text/*+json". Since "*" is a tchar, the language is unchanged.
+
+; https://www.rfc-editor.org/rfc/rfc9110#section-12.4.2
+weight          = OWS ";" OWS "q=" qvalue
+qvalue          = ( "0" [ "." 0*3DIGIT ] )
+                / ( "1" [ "." 0*3("0") ] )
+
+; https://www.rfc-editor.org/rfc/rfc9110#section-8.3.1
+media-type      = type "/" subtype parameters
+type            = token
+subtype         = token
+
+; https://www.rfc-editor.org/rfc/rfc9110#section-5.6.6
+parameters      = *( OWS ";" OWS [ parameter ] )
+parameter       = parameter-name "=" parameter-value
+parameter-name  = token
+parameter-value = ( token / quoted-string )
+
+; https://www.rfc-editor.org/rfc/rfc9110#section-5.6.2
+token           = 1*tchar
+tchar           = "!" / "#" / "$" / "%" / "&" / "'" / "*"
+                / "+" / "-" / "." / "^" / "_" / "`" / "|" / "~"
+                / DIGIT / ALPHA
+                ; any VCHAR, except delimiters
+
+; https://www.rfc-editor.org/rfc/rfc9110#section-5.6.3
+OWS             = *( SP / HTAB )
+                ; optional whitespace
+
+; https://www.rfc-editor.org/rfc/rfc9110#section-5.6.4
+quoted-string   = DQUOTE *( qdtext / quoted-pair ) DQUOTE
+qdtext          = HTAB / SP / %x21 / %x23-5B / %x5D-7E / obs-text
+quoted-pair     = "\" ( HTAB / SP / VCHAR / obs-text )
+
+; https://www.rfc-editor.org/rfc/rfc9110#section-5.5
+obs-text        = %x80-FF
+
+; https://www.rfc-editor.org/rfc/rfc5234#appendix-B.1
+ALPHA           = %x41-5A / %x61-7A   ; A-Z / a-z
+DIGIT           = %x30-39             ; 0-9
+DQUOTE          = %x22                ; " (Double Quote)
+HTAB            = %x09                ; horizontal tab
+SP              = %x20
+VCHAR           = %x21-7E             ; visible (printing) characters

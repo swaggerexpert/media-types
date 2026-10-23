@@ -1,0 +1,937 @@
+[
+  "Extracted from https://github.com/jshttp/negotiator/blob/dfb9facc44f1396517ffa229fb7d04f2e14fbff4/test/mediaType.js",
+  "Licensed under the MIT License, see LICENSE file in this directory",
+  {
+    "description": "negotiator.mediaType() > when no Accept > should return */*",
+    "method": "mediaType",
+    "accept": null,
+    "available": null,
+    "expected": "*/*"
+  },
+  {
+    "description": "negotiator.mediaType() > when Accept: */* > should return */*",
+    "method": "mediaType",
+    "accept": "*/*",
+    "available": null,
+    "expected": "*/*"
+  },
+  {
+    "description": "negotiator.mediaType() > when Accept: application/json > should return application/json",
+    "method": "mediaType",
+    "accept": "application/json",
+    "available": null,
+    "expected": "application/json"
+  },
+  {
+    "description": "negotiator.mediaType() > when Accept: application/json;q=0 > should return undefined",
+    "method": "mediaType",
+    "accept": "application/json;q=0",
+    "available": null,
+    "expected": null
+  },
+  {
+    "description": "negotiator.mediaType() > when Accept: application/json;q=0.2, text/html > should return text/html",
+    "method": "mediaType",
+    "accept": "application/json;q=0.2, text/html",
+    "available": null,
+    "expected": "text/html"
+  },
+  {
+    "description": "negotiator.mediaType() > when Accept: text/* > should return text/*",
+    "method": "mediaType",
+    "accept": "text/*",
+    "available": null,
+    "expected": "text/*"
+  },
+  {
+    "description": "negotiator.mediaType() > when Accept: text/plain, application/json;q=0.5, text/html, */*;q=0.1 > should return text/plain",
+    "method": "mediaType",
+    "accept": "text/plain, application/json;q=0.5, text/html, */*;q=0.1",
+    "available": null,
+    "expected": "text/plain"
+  },
+  {
+    "description": "negotiator.mediaType() > when Accept: text/plain, application/json;q=0.5, text/html, text/xml, text/yaml, text/javascript, text/csv, text/css, text/rtf, text/markdown, application/octet-stream;q=0.2, */*;q=0.1 > should return text/plain",
+    "method": "mediaType",
+    "accept": "text/plain, application/json;q=0.5, text/html, text/xml, text/yaml, text/javascript, text/csv, text/css, text/rtf, text/markdown, application/octet-stream;q=0.2, */*;q=0.1",
+    "available": null,
+    "expected": "text/plain"
+  },
+  {
+    "description": "negotiator.mediaType(array) > when no Accept > should return first item in list",
+    "method": "mediaType",
+    "accept": null,
+    "available": [
+      "text/html"
+    ],
+    "expected": "text/html"
+  },
+  {
+    "description": "negotiator.mediaType(array) > when no Accept > should return first item in list",
+    "method": "mediaType",
+    "accept": null,
+    "available": [
+      "text/html",
+      "application/json"
+    ],
+    "expected": "text/html"
+  },
+  {
+    "description": "negotiator.mediaType(array) > when no Accept > should return first item in list",
+    "method": "mediaType",
+    "accept": null,
+    "available": [
+      "application/json",
+      "text/html"
+    ],
+    "expected": "application/json"
+  },
+  {
+    "description": "negotiator.mediaType(array) > when Accept: */* > should return first item in list",
+    "method": "mediaType",
+    "accept": "*/*",
+    "available": [
+      "text/html"
+    ],
+    "expected": "text/html"
+  },
+  {
+    "description": "negotiator.mediaType(array) > when Accept: */* > should return first item in list",
+    "method": "mediaType",
+    "accept": "*/*",
+    "available": [
+      "text/html",
+      "application/json"
+    ],
+    "expected": "text/html"
+  },
+  {
+    "description": "negotiator.mediaType(array) > when Accept: */* > should return first item in list",
+    "method": "mediaType",
+    "accept": "*/*",
+    "available": [
+      "application/json",
+      "text/html"
+    ],
+    "expected": "application/json"
+  },
+  {
+    "description": "negotiator.mediaType(array) > when Accept: application/json > should be case insensitive",
+    "method": "mediaType",
+    "accept": "application/json",
+    "available": [
+      "application/JSON"
+    ],
+    "expected": "application/JSON"
+  },
+  {
+    "description": "negotiator.mediaType(array) > when Accept: application/json > should only return application/json",
+    "method": "mediaType",
+    "accept": "application/json",
+    "available": [
+      "text/html"
+    ],
+    "expected": null
+  },
+  {
+    "description": "negotiator.mediaType(array) > when Accept: application/json > should only return application/json",
+    "method": "mediaType",
+    "accept": "application/json",
+    "available": [
+      "text/html",
+      "application/json"
+    ],
+    "expected": "application/json"
+  },
+  {
+    "description": "negotiator.mediaType(array) > when Accept: application/json;q=0 > should return undefined",
+    "method": "mediaType",
+    "accept": "application/json;q=0",
+    "available": null,
+    "expected": null
+  },
+  {
+    "description": "negotiator.mediaType(array) > when Accept: application/json;q=0.2, text/html > should prefer text/html over application/json",
+    "method": "mediaType",
+    "accept": "application/json;q=0.2, text/html",
+    "available": [
+      "application/json"
+    ],
+    "expected": "application/json"
+  },
+  {
+    "description": "negotiator.mediaType(array) > when Accept: application/json;q=0.2, text/html > should prefer text/html over application/json",
+    "method": "mediaType",
+    "accept": "application/json;q=0.2, text/html",
+    "available": [
+      "application/json",
+      "text/html"
+    ],
+    "expected": "text/html"
+  },
+  {
+    "description": "negotiator.mediaType(array) > when Accept: application/json;q=0.2, text/html > should prefer text/html over application/json",
+    "method": "mediaType",
+    "accept": "application/json;q=0.2, text/html",
+    "available": [
+      "text/html",
+      "application/json"
+    ],
+    "expected": "text/html"
+  },
+  {
+    "description": "negotiator.mediaType(array) > when Accept: text/* > should prefer text media types",
+    "method": "mediaType",
+    "accept": "text/*",
+    "available": [
+      "application/json"
+    ],
+    "expected": null
+  },
+  {
+    "description": "negotiator.mediaType(array) > when Accept: text/* > should prefer text media types",
+    "method": "mediaType",
+    "accept": "text/*",
+    "available": [
+      "application/json",
+      "text/html"
+    ],
+    "expected": "text/html"
+  },
+  {
+    "description": "negotiator.mediaType(array) > when Accept: text/* > should prefer text media types",
+    "method": "mediaType",
+    "accept": "text/*",
+    "available": [
+      "text/html",
+      "application/json"
+    ],
+    "expected": "text/html"
+  },
+  {
+    "description": "negotiator.mediaType(array) > when Accept: text/*, text/plain;q=0 > should prefer text media types",
+    "method": "mediaType",
+    "accept": "text/*, text/plain;q=0",
+    "available": [
+      "application/json"
+    ],
+    "expected": null
+  },
+  {
+    "description": "negotiator.mediaType(array) > when Accept: text/*, text/plain;q=0 > should prefer text media types",
+    "method": "mediaType",
+    "accept": "text/*, text/plain;q=0",
+    "available": [
+      "application/json",
+      "text/html"
+    ],
+    "expected": "text/html"
+  },
+  {
+    "description": "negotiator.mediaType(array) > when Accept: text/*, text/plain;q=0 > should prefer text media types",
+    "method": "mediaType",
+    "accept": "text/*, text/plain;q=0",
+    "available": [
+      "text/html",
+      "application/json"
+    ],
+    "expected": "text/html"
+  },
+  {
+    "description": "negotiator.mediaType(array) > when Accept: text/plain, application/json;q=0.5, text/html, */*;q=0.1 > should return in preferred order",
+    "method": "mediaType",
+    "accept": "text/plain, application/json;q=0.5, text/html, */*;q=0.1",
+    "available": [
+      "application/json",
+      "text/plain",
+      "text/html"
+    ],
+    "expected": "text/plain"
+  },
+  {
+    "description": "negotiator.mediaType(array) > when Accept: text/plain, application/json;q=0.5, text/html, */*;q=0.1 > should return in preferred order",
+    "method": "mediaType",
+    "accept": "text/plain, application/json;q=0.5, text/html, */*;q=0.1",
+    "available": [
+      "image/jpeg",
+      "text/html"
+    ],
+    "expected": "text/html"
+  },
+  {
+    "description": "negotiator.mediaType(array) > when Accept: text/plain, application/json;q=0.5, text/html, */*;q=0.1 > should return in preferred order",
+    "method": "mediaType",
+    "accept": "text/plain, application/json;q=0.5, text/html, */*;q=0.1",
+    "available": [
+      "image/jpeg",
+      "image/gif"
+    ],
+    "expected": "image/jpeg"
+  },
+  {
+    "description": "negotiator.mediaType(array) > when Accept: text/plain, application/json;q=0.5, text/html, text/xml, text/yaml, text/javascript, text/csv, text/css, text/rtf, text/markdown, application/octet-stream;q=0.2, */*;q=0.1 > should return the client-preferred order",
+    "method": "mediaType",
+    "accept": "text/plain, application/json;q=0.5, text/html, text/xml, text/yaml, text/javascript, text/csv, text/css, text/rtf, text/markdown, application/octet-stream;q=0.2, */*;q=0.1",
+    "available": [
+      "text/plain",
+      "text/html",
+      "text/xml",
+      "text/yaml",
+      "text/javascript",
+      "text/csv",
+      "text/css",
+      "text/rtf",
+      "text/markdown",
+      "application/json",
+      "application/octet-stream"
+    ],
+    "expected": "text/plain"
+  },
+  {
+    "description": "negotiator.mediaTypes() > when no Accept > should return */*",
+    "method": "mediaTypes",
+    "accept": null,
+    "available": null,
+    "expected": [
+      "*/*"
+    ]
+  },
+  {
+    "description": "negotiator.mediaTypes() > when Accept: */* > should return */*",
+    "method": "mediaTypes",
+    "accept": "*/*",
+    "available": null,
+    "expected": [
+      "*/*"
+    ]
+  },
+  {
+    "description": "negotiator.mediaTypes() > when Accept: application/json > should return application/json",
+    "method": "mediaTypes",
+    "accept": "application/json",
+    "available": null,
+    "expected": [
+      "application/json"
+    ]
+  },
+  {
+    "description": "negotiator.mediaTypes() > when Accept: application/json;q=0 > should return empty list",
+    "method": "mediaTypes",
+    "accept": "application/json;q=0",
+    "available": null,
+    "expected": []
+  },
+  {
+    "description": "negotiator.mediaTypes() > when Accept: application/json;q=0.2, text/html > should return text/html, application/json",
+    "method": "mediaTypes",
+    "accept": "application/json;q=0.2, text/html",
+    "available": null,
+    "expected": [
+      "text/html",
+      "application/json"
+    ]
+  },
+  {
+    "description": "negotiator.mediaTypes() > when Accept: text/* > should return text/*",
+    "method": "mediaTypes",
+    "accept": "text/*",
+    "available": null,
+    "expected": [
+      "text/*"
+    ]
+  },
+  {
+    "description": "negotiator.mediaTypes() > when Accept: text/*, text/plain;q=0 > should return text/*",
+    "method": "mediaTypes",
+    "accept": "text/*, text/plain;q=0",
+    "available": null,
+    "expected": [
+      "text/*"
+    ]
+  },
+  {
+    "description": "negotiator.mediaTypes() > when Accept: text/html;LEVEL=1 > should return text/html;LEVEL=1",
+    "method": "mediaTypes",
+    "accept": "text/html;LEVEL=1",
+    "available": null,
+    "expected": [
+      "text/html"
+    ]
+  },
+  {
+    "description": "negotiator.mediaTypes() > when Accept: text/html;foo=\"bar,text/css;\";fizz=\"buzz,5\", text/plain > should return text/html, text/plain",
+    "method": "mediaTypes",
+    "accept": "text/html;foo=\"bar,text/css;\";fizz=\"buzz,5\", text/plain",
+    "available": null,
+    "expected": [
+      "text/html",
+      "text/plain"
+    ]
+  },
+  {
+    "description": "negotiator.mediaTypes() > when Accept: text/html;foo=\"bar\\\"\", application/json > should handle escaped quotes",
+    "method": "mediaTypes",
+    "accept": "text/html;foo=\"bar\\\"\", application/json",
+    "available": null,
+    "expected": [
+      "text/html",
+      "application/json"
+    ]
+  },
+  {
+    "description": "negotiator.mediaTypes() > when Accept: text/plain, application/json;q=0.5, text/html, */*;q=0.1 > should return text/plain, text/html, application/json, */*",
+    "method": "mediaTypes",
+    "accept": "text/plain, application/json;q=0.5, text/html, */*;q=0.1",
+    "available": null,
+    "expected": [
+      "text/plain",
+      "text/html",
+      "application/json",
+      "*/*"
+    ]
+  },
+  {
+    "description": "negotiator.mediaTypes() > when Accept: text/plain, application/json;q=0.5, text/html, text/xml, text/yaml, text/javascript, text/csv, text/css, text/rtf, text/markdown, application/octet-stream;q=0.2, */*;q=0.1 > should return the client-preferred order",
+    "method": "mediaTypes",
+    "accept": "text/plain, application/json;q=0.5, text/html, text/xml, text/yaml, text/javascript, text/csv, text/css, text/rtf, text/markdown, application/octet-stream;q=0.2, */*;q=0.1",
+    "available": null,
+    "expected": [
+      "text/plain",
+      "text/html",
+      "text/xml",
+      "text/yaml",
+      "text/javascript",
+      "text/csv",
+      "text/css",
+      "text/rtf",
+      "text/markdown",
+      "application/json",
+      "application/octet-stream",
+      "*/*"
+    ]
+  },
+  {
+    "description": "negotiator.mediaTypes(array) > when no Accept > should return return original list",
+    "method": "mediaTypes",
+    "accept": null,
+    "available": [
+      "application/json",
+      "text/plain"
+    ],
+    "expected": [
+      "application/json",
+      "text/plain"
+    ]
+  },
+  {
+    "description": "negotiator.mediaTypes(array) > when Accept: */* > should return return original list",
+    "method": "mediaTypes",
+    "accept": "*/*",
+    "available": [
+      "application/json",
+      "text/plain"
+    ],
+    "expected": [
+      "application/json",
+      "text/plain"
+    ]
+  },
+  {
+    "description": "negotiator.mediaTypes(array) > when Accept: */*;q=0.8, text/*, image/* > should return return stable-sorted list",
+    "method": "mediaTypes",
+    "accept": "*/*;q=0.8, text/*, image/*",
+    "available": [
+      "application/json",
+      "text/html",
+      "text/plain",
+      "text/xml",
+      "application/xml",
+      "image/gif",
+      "image/jpeg",
+      "image/png",
+      "audio/mp3",
+      "application/javascript",
+      "text/javascript"
+    ],
+    "expected": [
+      "text/html",
+      "text/plain",
+      "text/xml",
+      "text/javascript",
+      "image/gif",
+      "image/jpeg",
+      "image/png",
+      "application/json",
+      "application/xml",
+      "audio/mp3",
+      "application/javascript"
+    ]
+  },
+  {
+    "description": "negotiator.mediaTypes(array) > when Accept: application/json > should accept application/json",
+    "method": "mediaTypes",
+    "accept": "application/json",
+    "available": [
+      "application/json"
+    ],
+    "expected": [
+      "application/json"
+    ]
+  },
+  {
+    "description": "negotiator.mediaTypes(array) > when Accept: application/json > should be case insensitive",
+    "method": "mediaTypes",
+    "accept": "application/json",
+    "available": [
+      "application/JSON"
+    ],
+    "expected": [
+      "application/JSON"
+    ]
+  },
+  {
+    "description": "negotiator.mediaTypes(array) > when Accept: application/json > should only return application/json",
+    "method": "mediaTypes",
+    "accept": "application/json",
+    "available": [
+      "text/html",
+      "application/json"
+    ],
+    "expected": [
+      "application/json"
+    ]
+  },
+  {
+    "description": "negotiator.mediaTypes(array) > when Accept: application/json > should ignore invalid types",
+    "method": "mediaTypes",
+    "accept": "application/json",
+    "available": [
+      "boom",
+      "application/json"
+    ],
+    "expected": [
+      "application/json"
+    ]
+  },
+  {
+    "description": "negotiator.mediaTypes(array) > when Accept: application/json;q=0 > should not accept application/json",
+    "method": "mediaTypes",
+    "accept": "application/json;q=0",
+    "available": [
+      "application/json"
+    ],
+    "expected": []
+  },
+  {
+    "description": "negotiator.mediaTypes(array) > when Accept: application/json;q=0 > should not accept other media types",
+    "method": "mediaTypes",
+    "accept": "application/json;q=0",
+    "available": [
+      "application/json",
+      "text/html",
+      "image/jpeg"
+    ],
+    "expected": []
+  },
+  {
+    "description": "negotiator.mediaTypes(array) > when Accept: application/json;q=0.2, text/html > should prefer text/html over application/json",
+    "method": "mediaTypes",
+    "accept": "application/json;q=0.2, text/html",
+    "available": [
+      "application/json",
+      "text/html"
+    ],
+    "expected": [
+      "text/html",
+      "application/json"
+    ]
+  },
+  {
+    "description": "negotiator.mediaTypes(array) > when Accept: application/json;q=0.9, text/html;q=0.8, application/json;q=0.7 > should prefer application/json over text/html",
+    "method": "mediaTypes",
+    "accept": "application/json;q=0.9, text/html;q=0.8, application/json;q=0.7",
+    "available": [
+      "text/html",
+      "application/json"
+    ],
+    "expected": [
+      "application/json",
+      "text/html"
+    ]
+  },
+  {
+    "description": "negotiator.mediaTypes(array) > when Accept: application/json, */*;q=0.1 > should prefer application/json over text/html",
+    "method": "mediaTypes",
+    "accept": "application/json, */*;q=0.1",
+    "available": [
+      "text/html",
+      "application/json"
+    ],
+    "expected": [
+      "application/json",
+      "text/html"
+    ]
+  },
+  {
+    "description": "negotiator.mediaTypes(array) > when Accept: application/xhtml+xml;profile=\"http://www.wapforum.org/xhtml\" > should accept application/xhtml+xml;profile=\"http://www.wapforum.org/xhtml\"",
+    "method": "mediaTypes",
+    "accept": "application/xhtml+xml;profile=\"http://www.wapforum.org/xhtml\"",
+    "available": [
+      "application/xhtml+xml;profile=\"http://www.wapforum.org/xhtml\""
+    ],
+    "expected": [
+      "application/xhtml+xml;profile=\"http://www.wapforum.org/xhtml\""
+    ]
+  },
+  {
+    "description": "negotiator.mediaTypes(array) > when Accept: text/* > should prefer text media types",
+    "method": "mediaTypes",
+    "accept": "text/*",
+    "available": [
+      "text/html",
+      "application/json",
+      "text/plain"
+    ],
+    "expected": [
+      "text/html",
+      "text/plain"
+    ]
+  },
+  {
+    "description": "negotiator.mediaTypes(array) > when Accept: text/*, text/html;level > should accept text/html",
+    "method": "mediaTypes",
+    "accept": "text/*, text/html;level",
+    "available": [
+      "text/html"
+    ],
+    "expected": [
+      "text/html"
+    ]
+  },
+  {
+    "description": "negotiator.mediaTypes(array) > when Accept: text/*, text/plain;q=0 > should prefer text media types except text/plain",
+    "method": "mediaTypes",
+    "accept": "text/*, text/plain;q=0",
+    "available": [
+      "text/html",
+      "text/plain"
+    ],
+    "expected": [
+      "text/html"
+    ]
+  },
+  {
+    "description": "negotiator.mediaTypes(array) > when Accept: text/*, text/plain;q=0.5 > should prefer text/plain below other text types",
+    "method": "mediaTypes",
+    "accept": "text/*, text/plain;q=0.5",
+    "available": [
+      "text/html",
+      "text/plain",
+      "text/xml"
+    ],
+    "expected": [
+      "text/html",
+      "text/xml",
+      "text/plain"
+    ]
+  },
+  {
+    "description": "negotiator.mediaTypes(array) > when Accept: text/html;level=1 > should accept text/html;level=1",
+    "method": "mediaTypes",
+    "accept": "text/html;level=1",
+    "available": [
+      "text/html;level=1"
+    ],
+    "expected": [
+      "text/html;level=1"
+    ]
+  },
+  {
+    "description": "negotiator.mediaTypes(array) > when Accept: text/html;level=1 > should accept text/html;Level=1",
+    "method": "mediaTypes",
+    "accept": "text/html;level=1",
+    "available": [
+      "text/html;Level=1"
+    ],
+    "expected": [
+      "text/html;Level=1"
+    ]
+  },
+  {
+    "description": "negotiator.mediaTypes(array) > when Accept: text/html;level=1 > should not accept text/html;level=2",
+    "method": "mediaTypes",
+    "accept": "text/html;level=1",
+    "available": [
+      "text/html;level=2"
+    ],
+    "expected": []
+  },
+  {
+    "description": "negotiator.mediaTypes(array) > when Accept: text/html;level=1 > should not accept text/html",
+    "method": "mediaTypes",
+    "accept": "text/html;level=1",
+    "available": [
+      "text/html"
+    ],
+    "expected": []
+  },
+  {
+    "description": "negotiator.mediaTypes(array) > when Accept: text/html;level=1 > should accept text/html;level=1;foo=bar",
+    "method": "mediaTypes",
+    "accept": "text/html;level=1",
+    "available": [
+      "text/html;level=1;foo=bar"
+    ],
+    "expected": [
+      "text/html;level=1;foo=bar"
+    ]
+  },
+  {
+    "description": "negotiator.mediaTypes(array) > when Accept: text/html;level=1;foo=bar > should not accept text/html;level=1",
+    "method": "mediaTypes",
+    "accept": "text/html;level=1;foo=bar",
+    "available": [
+      "text/html;level=1"
+    ],
+    "expected": []
+  },
+  {
+    "description": "negotiator.mediaTypes(array) > when Accept: text/html;level=1;foo=bar > should accept text/html;level=1;foo=bar",
+    "method": "mediaTypes",
+    "accept": "text/html;level=1;foo=bar",
+    "available": [
+      "text/html;level=1;foo=bar"
+    ],
+    "expected": [
+      "text/html;level=1;foo=bar"
+    ]
+  },
+  {
+    "description": "negotiator.mediaTypes(array) > when Accept: text/html;level=1;foo=bar > should accept text/html;foo=bar;level=1",
+    "method": "mediaTypes",
+    "accept": "text/html;level=1;foo=bar",
+    "available": [
+      "text/html;foo=bar;level=1"
+    ],
+    "expected": [
+      "text/html;foo=bar;level=1"
+    ]
+  },
+  {
+    "description": "negotiator.mediaTypes(array) > when Accept: text/html;level=1;foo=\"bar\" > should accept text/html;level=1;foo=bar",
+    "method": "mediaTypes",
+    "accept": "text/html;level=1;foo=\"bar\"",
+    "available": [
+      "text/html;level=1;foo=bar"
+    ],
+    "expected": [
+      "text/html;level=1;foo=bar"
+    ]
+  },
+  {
+    "description": "negotiator.mediaTypes(array) > when Accept: text/html;level=1;foo=\"bar\" > should accept text/html;level=1;foo=\"bar\"",
+    "method": "mediaTypes",
+    "accept": "text/html;level=1;foo=\"bar\"",
+    "available": [
+      "text/html;level=1;foo=\"bar\""
+    ],
+    "expected": [
+      "text/html;level=1;foo=\"bar\""
+    ]
+  },
+  {
+    "description": "negotiator.mediaTypes(array) > when Accept: text/html;foo=\";level=2;\" > should not accept text/html;level=2",
+    "method": "mediaTypes",
+    "accept": "text/html;foo=\";level=2;\"",
+    "available": [
+      "text/html;level=2"
+    ],
+    "expected": []
+  },
+  {
+    "description": "negotiator.mediaTypes(array) > when Accept: text/html;foo=\";level=2;\" > should accept text/html;foo=\";level=2;\"",
+    "method": "mediaTypes",
+    "accept": "text/html;foo=\";level=2;\"",
+    "available": [
+      "text/html;foo=\";level=2;\""
+    ],
+    "expected": [
+      "text/html;foo=\";level=2;\""
+    ]
+  },
+  {
+    "description": "negotiator.mediaTypes(array) > when Accept: text/html;LEVEL=1 > should accept text/html;level=1",
+    "method": "mediaTypes",
+    "accept": "text/html;LEVEL=1",
+    "available": [
+      "text/html;level=1"
+    ],
+    "expected": [
+      "text/html;level=1"
+    ]
+  },
+  {
+    "description": "negotiator.mediaTypes(array) > when Accept: text/html;LEVEL=1 > should accept text/html;Level=1",
+    "method": "mediaTypes",
+    "accept": "text/html;LEVEL=1",
+    "available": [
+      "text/html;Level=1"
+    ],
+    "expected": [
+      "text/html;Level=1"
+    ]
+  },
+  {
+    "description": "negotiator.mediaTypes(array) > when Accept: text/html;LEVEL=1;level=2 > should accept the first parameter value",
+    "method": "mediaTypes",
+    "accept": "text/html;LEVEL=1;level=2",
+    "available": [
+      "text/html;level=1"
+    ],
+    "expected": [
+      "text/html;level=1"
+    ]
+  },
+  {
+    "description": "negotiator.mediaTypes(array) > when Accept: text/html;LEVEL=1;level=2 > should not accept the duplicate parameter value",
+    "method": "mediaTypes",
+    "accept": "text/html;LEVEL=1;level=2",
+    "available": [
+      "text/html;level=2"
+    ],
+    "expected": []
+  },
+  {
+    "description": "negotiator.mediaTypes(array) > when Accept: text/html;level=2 > should not accept text/html;level=1",
+    "method": "mediaTypes",
+    "accept": "text/html;level=2",
+    "available": [
+      "text/html;level=1"
+    ],
+    "expected": []
+  },
+  {
+    "description": "negotiator.mediaTypes(array) > when Accept: text/html;level=2, text/html > should prefer text/html;level=2 over text/html",
+    "method": "mediaTypes",
+    "accept": "text/html;level=2, text/html",
+    "available": [
+      "text/html",
+      "text/html;level=2"
+    ],
+    "expected": [
+      "text/html;level=2",
+      "text/html"
+    ]
+  },
+  {
+    "description": "negotiator.mediaTypes(array) > when Accept: text/html;level=2;q=0.1, text/html > should prefer text/html over text/html;level=2",
+    "method": "mediaTypes",
+    "accept": "text/html;level=2;q=0.1, text/html",
+    "available": [
+      "text/html;level=2",
+      "text/html"
+    ],
+    "expected": [
+      "text/html",
+      "text/html;level=2"
+    ]
+  },
+  {
+    "description": "negotiator.mediaTypes(array) > when Accept: text/html;level=2;q=0.1;level=1 > should not accept text/html;level=1",
+    "method": "mediaTypes",
+    "accept": "text/html;level=2;q=0.1;level=1",
+    "available": [
+      "text/html;level=1"
+    ],
+    "expected": []
+  },
+  {
+    "description": "negotiator.mediaTypes(array) > when Accept: text/html;level=2;q=0.1, text/html;level=1, text/html;q=0.5 > should prefer text/html;level=1, text/html, text/html;level=2",
+    "method": "mediaTypes",
+    "accept": "text/html;level=2;q=0.1, text/html;level=1, text/html;q=0.5",
+    "available": [
+      "text/html;level=1",
+      "text/html;level=2",
+      "text/html"
+    ],
+    "expected": [
+      "text/html;level=1",
+      "text/html",
+      "text/html;level=2"
+    ]
+  },
+  {
+    "description": "negotiator.mediaTypes(array) > when Accept: text/plain, application/json;q=0.5, text/html, */*;q=0.1 > should prefer text/plain over text/html",
+    "method": "mediaTypes",
+    "accept": "text/plain, application/json;q=0.5, text/html, */*;q=0.1",
+    "available": [
+      "text/html",
+      "text/plain"
+    ],
+    "expected": [
+      "text/plain",
+      "text/html"
+    ]
+  },
+  {
+    "description": "negotiator.mediaTypes(array) > when Accept: text/plain, application/json;q=0.5, text/html, */*;q=0.1 > should prefer application/json after text",
+    "method": "mediaTypes",
+    "accept": "text/plain, application/json;q=0.5, text/html, */*;q=0.1",
+    "available": [
+      "application/json",
+      "text/html",
+      "text/plain"
+    ],
+    "expected": [
+      "text/plain",
+      "text/html",
+      "application/json"
+    ]
+  },
+  {
+    "description": "negotiator.mediaTypes(array) > when Accept: text/plain, application/json;q=0.5, text/html, */*;q=0.1 > should prefer image/jpeg after text",
+    "method": "mediaTypes",
+    "accept": "text/plain, application/json;q=0.5, text/html, */*;q=0.1",
+    "available": [
+      "image/jpeg",
+      "text/html",
+      "text/plain"
+    ],
+    "expected": [
+      "text/plain",
+      "text/html",
+      "image/jpeg"
+    ]
+  },
+  {
+    "description": "negotiator.mediaTypes(array) > when Accept: text/plain, application/json;q=0.5, text/html, text/xml, text/yaml, text/javascript, text/csv, text/css, text/rtf, text/markdown, application/octet-stream;q=0.2, */*;q=0.1 > should return the client-preferred order",
+    "method": "mediaTypes",
+    "accept": "text/plain, application/json;q=0.5, text/html, text/xml, text/yaml, text/javascript, text/csv, text/css, text/rtf, text/markdown, application/octet-stream;q=0.2, */*;q=0.1",
+    "available": [
+      "text/plain",
+      "text/html",
+      "text/xml",
+      "text/yaml",
+      "text/javascript",
+      "text/csv",
+      "text/css",
+      "text/rtf",
+      "text/markdown",
+      "application/json",
+      "application/octet-stream"
+    ],
+    "expected": [
+      "text/plain",
+      "text/html",
+      "text/xml",
+      "text/yaml",
+      "text/javascript",
+      "text/csv",
+      "text/css",
+      "text/rtf",
+      "text/markdown",
+      "application/json",
+      "application/octet-stream"
+    ]
+  }
+]

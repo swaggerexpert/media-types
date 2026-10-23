@@ -1,0 +1,473 @@
+# @swaggerexpert/media-types
+
+[![Test workflow](https://github.com/swaggerexpert/media-types/actions/workflows/test.yml/badge.svg)](https://github.com/swaggerexpert/media-types/actions)
+[![Dependabot enabled](https://img.shields.io/badge/Dependabot-enabled-blue.svg)](https://dependabot.com/)
+
+`@swaggerexpert/media-types` is a **parser**, **validator** and **matcher** for media types, media ranges
+and `Accept` field values as defined in [RFC 9110](https://www.rfc-editor.org/rfc/rfc9110) (HTTP Semantics).
+
+A single parse yields **type**, **subtype**, **structured syntax suffix** ([RFC 6838](https://www.rfc-editor.org/rfc/rfc6838#section-4.2.8))
+and **parameters**. Matching follows the precedence rules of [RFC 9110, Section 12.5.1](https://www.rfc-editor.org/rfc/rfc9110#section-12.5.1).
+
+## Table of Contents
+
+- [Getting started](#getting-started)
+  - [Installation](#installation)
+  - [Usage](#usage)
+    - [Parsing](#parsing)
+      - [Media Type](#media-type)
+      - [Media Range](#media-range)
+      - [Accept](#accept)
+      - [Translators](#translators)
+        - [CST](#cst-translator)
+        - [AST](#ast-translator)
+        - [XML](#xml-translator)
+      - [Statistics](#statistics)
+      - [Tracing](#tracing)
+    - [Validation](#validation)
+    - [Matching](#matching)
+      - [matches](#matches)
+      - [selectBestMatch](#selectbestmatch)
+      - [quality](#quality)
+      - [negotiate](#negotiate)
+    - [Errors](#errors)
+    - [Grammar](#grammar)
+- [Compliance](#compliance)
+- [Comparison with media-typer and content-type](#comparison-with-media-typer-and-content-type)
+- [More about media types](#more-about-media-types)
+- [License](#license)
+
+## Getting started
+
+### Installation
+
+You can install `@swaggerexpert/media-types` using `npm`:
+
+```sh
+ $ npm install @swaggerexpert/media-types
+```
+
+---
+
+**[unpkg.com](https://unpkg.com/)**
+
+Include following script tag into your HTML file:
+
+```html
+<script src="https://unpkg.com/@swaggerexpert/media-types@latest/dist/media-types.browser.min.js"></script>
+```
+
+Global variable `MediaTypes` will be available in the browser matching interface of `@swaggerexpert/media-types` npm package.
+`media-types.browser.min.js` is [UMD](https://github.com/umdjs/umd?tab=readme-ov-file#umd-universal-module-definition) minified build artifact.
+There is also unminified `media-types.browser.js` artifact, suitable for debugging.
+
+---
+
+**[jsDelivr](https://www.jsdelivr.com/)**
+
+Include following script tag into your HTML file (ESM mode):
+
+```html
+<script type="module">
+  import * as MediaTypes from 'https://cdn.jsdelivr.net/npm/@swaggerexpert/media-types@latest/+esm'
+</script>
+```
+
+Local variable `MediaTypes` will be available in scope of the `<script>` tag matching interface of `@swaggerexpert/media-types` package.
+
+### Usage
+
+`@swaggerexpert/media-types` currently supports **parsing**, **validation** and **matching**.
+Both parser and validator are based on [ABNF](https://www.rfc-editor.org/rfc/rfc5234) grammar taken from RFC 9110
+and use [apg-lite](https://github.com/ldthomas/apg-lite) parser generator.
+
+#### Parsing
+
+Parsing is as simple as importing the **parse** function and calling it.
+
+```js
+import { parse } from '@swaggerexpert/media-types';
+
+const parseResult = parse('text/html;charset=utf-8');
+```
+
+**parseResult** variable has the following shape:
+
+```
+{
+  result: <ParseResult['result]>,
+  tree: <ParseResult['tree']>,
+  stats: <ParseResult['stats']>,
+  trace: <ParseResult['trace']>,
+}
+```
+
+The `startRule` option selects what is being parsed: `media-type` (default), `media-range` or `Accept`.
+
+[TypeScript typings](https://github.com/swaggerexpert/media-types/blob/main/types/index.d.ts) are available for all fields attached to parse result object returned by the `parse` function.
+
+##### Media Type
+
+[RFC 9110, Section 8.3.1](https://www.rfc-editor.org/rfc/rfc9110#section-8.3.1) media type, e.g. the value of `Content-Type` header field.
+
+```js
+import { parse } from '@swaggerexpert/media-types';
+
+parse('application/vnd.api+json; charset="UTF-8"').tree;
+// =>
+// {
+//   type: 'application',
+//   subtype: 'vnd.api+json',
+//   suffix: 'json',
+//   parameters: { charset: 'UTF-8' },
+// }
+```
+
+- `type`, `subtype` and parameter names are case-insensitive and are always lower-cased.
+- Parameter values keep their case, as their case-sensitivity depends on the parameter semantics.
+- Quoted parameter values are unquoted and their quoted-pairs (`\"`, `\\`) resolved.
+- `subtype` is kept whole; `suffix` holds the part after the last `+` ([RFC 6838, Section 4.2.8](https://www.rfc-editor.org/rfc/rfc6838#section-4.2.8)) and is present only when there is one.
+- When a parameter occurs more than once, the first occurrence wins ([RFC 6838, Section 4.3](https://www.rfc-editor.org/rfc/rfc6838#section-4.3)).
+
+##### Media Range
+
+[RFC 9110, Section 12.5.1](https://www.rfc-editor.org/rfc/rfc9110#section-12.5.1) media range, e.g. keys of OpenAPI `content` maps.
+Media range has the same AST shape as media type.
+
+```js
+import { parse } from '@swaggerexpert/media-types';
+
+parse('text/*;level=1', { startRule: 'media-range' }).tree;
+// => { type: 'text', subtype: '*', parameters: { level: '1' } }
+```
+
+##### Accept
+
+[RFC 9110, Section 12.5.1](https://www.rfc-editor.org/rfc/rfc9110#section-12.5.1) `Accept` field value.
+Every media range carries its `weight` ([RFC 9110, Section 12.4.2](https://www.rfc-editor.org/rfc/rfc9110#section-12.4.2)), defaulting to `1`.
+
+```js
+import { parse } from '@swaggerexpert/media-types';
+
+parse('text/html;level=1;q=0.5, application/json, */*;q=0.1', { startRule: 'Accept' }).tree;
+// =>
+// [
+//   { type: 'text', subtype: 'html', parameters: { level: '1' }, weight: 0.5 },
+//   { type: 'application', subtype: 'json', parameters: {}, weight: 1 },
+//   { type: '*', subtype: '*', parameters: {}, weight: 0.1 },
+// ]
+```
+
+As RFC 9110 requires, any parameter named `q` is processed as weight, regardless of parameter ordering.
+A `q` value that is not a valid `qvalue` (e.g. `q=2`) results in `NaN` weight; such media range is never acceptable.
+Empty list elements (`text/html, , */*`) are allowed as required from recipients by [RFC 9110, Section 5.6.1.2](https://www.rfc-editor.org/rfc/rfc9110#section-5.6.1.2).
+
+##### Translators
+
+`@swaggerexpert/media-types` provides several translators to convert the parse result into different tree representations.
+
+###### CST translator
+
+[Concrete Syntax Tree](https://en.wikipedia.org/wiki/Parse_tree) (Parse tree) representation is available on parse result
+when instance of `CSTTranslator` is provided via a `translator` option to the `parse` function.
+CST is suitable to be consumed by other tools like IDEs, editors, etc...
+CST preserves the original text of every node, including original case and quoting.
+
+```js
+import { parse, CSTTranslator } from '@swaggerexpert/media-types';
+
+const { tree: CST } = parse('text/html;charset=utf-8', { translator: new CSTTranslator() });
+```
+
+CST tree has a shape documented by [TypeScript typings (CSTTree)](https://github.com/swaggerexpert/media-types/blob/main/types/index.d.ts).
+
+###### AST translator
+
+**Default translator**. [Abstract Syntax Tree](https://en.wikipedia.org/wiki/Abstract_syntax_tree) representation is available on parse result
+by default or when instance of `ASTTranslator` is provided via a `translator` option to the `parse` function.
+Its shape is described in the [Media Type](#media-type), [Media Range](#media-range) and [Accept](#accept) sections.
+
+```js
+import { parse, ASTTranslator } from '@swaggerexpert/media-types';
+
+const { tree: AST } = parse('text/html', { translator: new ASTTranslator() });
+```
+
+###### XML translator
+
+```js
+import { parse, XMLTranslator } from '@swaggerexpert/media-types';
+
+const { tree: XML } = parse('text/html;charset=utf-8', { translator: new XMLTranslator() });
+```
+
+##### Statistics
+
+`parse` function returns additional statistical information about the parsing process.
+Collection of the statistics can be enabled by setting `stats` option to `true`.
+
+```js
+import { parse } from '@swaggerexpert/media-types';
+
+const { stats } = parse('text/html', { stats: true });
+
+stats.displayStats(); // returns operator stats
+stats.displayHits(); // returns rules grouped by hit count
+```
+
+##### Tracing
+
+`parse` function returns additional tracing information about the parsing process.
+Tracing can be enabled by setting `trace` option to `true`. Tracing is essential
+for debugging failed matches or analyzing rule execution flow.
+
+```js
+import { parse } from '@swaggerexpert/media-types';
+
+const { result, trace } = parse('text/', { trace: true });
+
+result.success; // returns false
+trace.displayTrace(); // returns trace information
+trace.inferExpectations(); // returns parser expectations
+```
+
+By combining information from `result` and `trace`, it is possible to analyze the parsing process in detail
+and generate messages like this: `'Invalid media type: "text/". Syntax error at position 5, expected "!", "#", "$", ...'`. Please see this
+[test file](https://github.com/swaggerexpert/media-types/blob/main/test/parse/trace.js) for more information how to achieve that.
+
+#### Validation
+
+Validating is as simple as importing one of the validation functions and calling it.
+
+```js
+import { testMediaType, testMediaRange, testAccept } from '@swaggerexpert/media-types';
+
+testMediaType('text/html; charset=utf-8'); // => true
+testMediaType('text/html; charset =utf-8'); // => false (no whitespace allowed around "=")
+testMediaRange('text/*'); // => true
+testAccept('text/html, */*;q=0.8'); // => true
+```
+
+Validation is strict: whitespace around the whole value is not trimmed, as it is removed when the field value is parsed
+from an HTTP message ([RFC 9110, Section 5.5](https://www.rfc-editor.org/rfc/rfc9110#section-5.5)).
+
+#### Matching
+
+All matching functions accept either strings or already parsed ASTs. Strings are parsed using the strict grammar;
+invalid input throws `MediaTypeParseError`.
+
+Matching rules ([RFC 9110, Section 12.5.1](https://www.rfc-editor.org/rfc/rfc9110#section-12.5.1)):
+
+- `*/*` matches every media type, `type/*` matches every subtype of the type, otherwise type and subtype must be equal.
+- Every parameter of the media range must be present in the media type with an equal value. Values of `charset` parameter are compared case-insensitively ([RFC 9110, Section 8.3.2](https://www.rfc-editor.org/rfc/rfc9110#section-8.3.2)), other values are compared case-sensitively.
+- Precedence (specificity): `type/subtype` > `type/*` > `*/*`; on equal level, the media range with more parameters wins.
+
+##### matches
+
+Tests whether a media range matches a media type.
+
+```js
+import { matches } from '@swaggerexpert/media-types';
+
+matches('text/*', 'text/html'); // => true
+matches('text/html;level=1', 'text/html'); // => false
+matches('*/*;charset=utf-8', 'text/plain;charset=UTF-8'); // => true
+```
+
+##### selectBestMatch
+
+Selects the most specific media range matching a media type, e.g. selecting a key from an OpenAPI `content` map
+for a response `Content-Type`. On equal specificity, the first media range wins. Returns `undefined` when nothing matches.
+
+```js
+import { selectBestMatch } from '@swaggerexpert/media-types';
+
+selectBestMatch(['*/*', 'application/*', 'application/json'], 'application/json; charset=utf-8'); // => 'application/json'
+selectBestMatch(['application/*', 'text/plain'], 'image/png'); // => undefined
+```
+
+##### quality
+
+Returns the quality value an `Accept` field value associates with a media type,
+determined by the matching media range with the highest precedence. Returns `0` when nothing matches,
+and `1` when the `Accept` field value is `undefined` (no `Accept` header field means any media type is acceptable).
+
+```js
+import { quality } from '@swaggerexpert/media-types';
+
+const accept = 'text/*;q=0.3, text/plain;q=0.7, text/plain;format=flowed, text/plain;format=fixed;q=0.4, */*;q=0.5';
+
+quality(accept, 'text/plain;format=flowed'); // => 1
+quality(accept, 'text/plain'); // => 0.7
+quality(accept, 'text/html'); // => 0.3
+quality(accept, 'image/jpeg'); // => 0.5
+quality(accept, 'text/plain;format=fixed'); // => 0.4
+quality(accept, 'text/html;level=3'); // => 0.3
+```
+
+This is the example from [RFC 9110, Section 12.5.1](https://www.rfc-editor.org/rfc/rfc9110#section-12.5.1),
+with the last value corrected by [Errata ID 7138](https://www.rfc-editor.org/errata/eid7138).
+
+##### negotiate
+
+Orders available media types by the preference expressed in an `Accept` field value: by quality value,
+then by specificity of the matching media range, then by order of media ranges in the `Accept` field value
+and finally by order of available media types. Media types that are not acceptable are omitted.
+
+```js
+import { negotiate } from '@swaggerexpert/media-types';
+
+const accept = 'text/*;q=0.3, text/plain;q=0.7, text/plain;format=flowed, text/plain;format=fixed;q=0.4, */*;q=0.5';
+
+negotiate(accept, ['text/html', 'image/jpeg', 'text/plain', 'text/plain;format=flowed']);
+// => ['text/plain;format=flowed', 'text/plain', 'image/jpeg', 'text/html']
+
+negotiate('application/json;q=0, */*', ['application/json', 'text/html']); // => ['text/html']
+negotiate(undefined, ['application/json', 'text/html']); // => ['application/json', 'text/html']
+```
+
+#### Errors
+
+`@swaggerexpert/media-types` provides a structured error class hierarchy.
+
+```js
+import { MediaTypeError, MediaTypeParseError } from '@swaggerexpert/media-types';
+```
+
+**MediaTypeError** is the base class for all errors. **MediaTypeParseError** is thrown when matching functions
+receive invalid input; it carries the `source` string and the `startRule` it failed to parse with.
+
+```js
+import { matches } from '@swaggerexpert/media-types';
+
+try {
+  matches('text', 'text/html');
+} catch (error) {
+  error.message; // => 'Invalid media range: "text"'
+  error.source; // => 'text'
+  error.startRule; // => 'media-range'
+}
+```
+
+#### Grammar
+
+New grammar instance can be created in following way:
+
+```js
+import { Grammar } from '@swaggerexpert/media-types';
+
+const grammar = new Grammar();
+```
+
+To obtain original ABNF grammar as a string:
+
+```js
+import { Grammar } from '@swaggerexpert/media-types';
+
+const grammar = new Grammar();
+
+grammar.toString();
+// or
+String(grammar);
+```
+
+## Compliance
+
+- **Grammar** is taken from the body of RFC 9110 rather than from its collected ABNF in Appendix A
+  (see [Errata ID 9164](https://www.rfc-editor.org/errata/eid9164)). The only modification is the order
+  of `media-range` alternatives, required by the ordered choice of the parser; the accepted language is unchanged.
+- **Errata** of RFC 9110, RFC 6838 and RFC 5234 were reviewed. [Errata ID 7138](https://www.rfc-editor.org/errata/eid7138)
+  (verified) corrects the `Accept` precedence example and is part of the test suite.
+- **[web-platform-tests](https://github.com/web-platform-tests/wpt/tree/master/mimesniff/mime-types)** MIME type
+  parsing tests (955 cases) are part of the test suite. These tests are written for the
+  [WHATWG MIME Sniffing](https://mimesniff.spec.whatwg.org/#parsing-a-mime-type) algorithm, which recovers from
+  syntax errors. Every input valid under RFC 9110 produces exactly the same result, every input rejected by WHATWG
+  is rejected as well, and inputs WHATWG recovers from are rejected as invalid.
+- **[negotiator](https://github.com/jshttp/negotiator)** media type negotiation tests (64 applicable cases) are part
+  of the test suite. Two of them rely on negotiator ignoring invalid input (`text/html;level` parameter without value,
+  `boom` as available media type), which is rejected here.
+
+## Comparison with media-typer and content-type
+
+[media-typer](https://www.npmjs.com/package/media-typer) parses `type/subtype+suffix`, but rejects any parameters.
+[content-type](https://www.npmjs.com/package/content-type) parses parameters, but returns `type/subtype` as a single
+string and does not validate (e.g. `garbage` or `text/html; charset=utf-8, application/json` are accepted).
+Neither parses media ranges (media-typer rejects `text/*`) or `Accept` field values.
+
+`@swaggerexpert/media-types` produces type, subtype, suffix and parameters in a single strict parse, and
+covers media ranges, `Accept` and matching.
+
+## More about media types
+
+Media types, media ranges and `Accept` field values are defined by the following [ABNF](https://www.rfc-editor.org/rfc/rfc5234) syntax
+
+[comment]: <> (SPDX-FileCopyrightText: Copyright &#40;c&#41; 2022 IETF Trust and the persons identified as the document authors.  All rights reserved.)
+[comment]: <> (SPDX-License-Identifier: BSD-3-Clause)
+
+```abnf
+; Hypertext Transfer Protocol (HTTP) Semantics ABNF syntax
+; https://www.rfc-editor.org/rfc/rfc9110
+; Rules are taken from the body of RFC 9110 (not from the collected ABNF in Appendix A)
+; https://www.rfc-editor.org/errata/eid9164
+
+; https://www.rfc-editor.org/rfc/rfc9110#section-12.5.1
+; Accept = #( media-range [ weight ] )
+Accept          = [ ( media-range [ weight ] ) ] *( OWS "," OWS [ ( media-range [ weight ] ) ] )
+                ; list syntax expanded per recipient requirements
+                ; https://www.rfc-editor.org/rfc/rfc9110#section-5.6.1.2
+
+; https://www.rfc-editor.org/rfc/rfc9110#section-12.5.1
+media-range     = ( ( type "/" subtype ) / ( type "/" "*" ) / "*/*" ) parameters
+                ; MODIFICATION: alternatives reordered from ( "*/*" / ( type "/" "*" ) / ( type "/" subtype ) )
+                ; Alternatives are ordered (first match wins), and the original order would reject
+                ; valid media ranges like "text/*+json". Since "*" is a tchar, the language is unchanged.
+
+; https://www.rfc-editor.org/rfc/rfc9110#section-12.4.2
+weight          = OWS ";" OWS "q=" qvalue
+qvalue          = ( "0" [ "." 0*3DIGIT ] )
+                / ( "1" [ "." 0*3("0") ] )
+
+; https://www.rfc-editor.org/rfc/rfc9110#section-8.3.1
+media-type      = type "/" subtype parameters
+type            = token
+subtype         = token
+
+; https://www.rfc-editor.org/rfc/rfc9110#section-5.6.6
+parameters      = *( OWS ";" OWS [ parameter ] )
+parameter       = parameter-name "=" parameter-value
+parameter-name  = token
+parameter-value = ( token / quoted-string )
+
+; https://www.rfc-editor.org/rfc/rfc9110#section-5.6.2
+token           = 1*tchar
+tchar           = "!" / "#" / "$" / "%" / "&" / "'" / "*"
+                / "+" / "-" / "." / "^" / "_" / "`" / "|" / "~"
+                / DIGIT / ALPHA
+                ; any VCHAR, except delimiters
+
+; https://www.rfc-editor.org/rfc/rfc9110#section-5.6.3
+OWS             = *( SP / HTAB )
+                ; optional whitespace
+
+; https://www.rfc-editor.org/rfc/rfc9110#section-5.6.4
+quoted-string   = DQUOTE *( qdtext / quoted-pair ) DQUOTE
+qdtext          = HTAB / SP / %x21 / %x23-5B / %x5D-7E / obs-text
+quoted-pair     = "\" ( HTAB / SP / VCHAR / obs-text )
+
+; https://www.rfc-editor.org/rfc/rfc9110#section-5.5
+obs-text        = %x80-FF
+
+; https://www.rfc-editor.org/rfc/rfc5234#appendix-B.1
+ALPHA           = %x41-5A / %x61-7A   ; A-Z / a-z
+DIGIT           = %x30-39             ; 0-9
+DQUOTE          = %x22                ; " (Double Quote)
+HTAB            = %x09                ; horizontal tab
+SP              = %x20
+VCHAR           = %x21-7E             ; visible (printing) characters
+```
+
+## License
+
+`@swaggerexpert/media-types` is licensed under [Apache 2.0 license](https://github.com/swaggerexpert/media-types/blob/main/LICENSE).
+`@swaggerexpert/media-types` comes with an explicit [NOTICE](https://github.com/swaggerexpert/media-types/blob/main/NOTICE) file
+containing additional legal notices and information.

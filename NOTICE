@@ -1,0 +1,29 @@
+@swaggerexpert/media-types
+Copyright 2026, Vladimír Gorej
+@swaggerexpert/media-types is licensed under Apache 2.0 license.
+Copy of the Apache 2.0 license can be found in `LICENSE` file.
+
+HTTP Semantics
+Copyright (c) 2022 IETF Trust and the persons identified as the document authors.  All rights reserved.
+https://www.rfc-editor.org/rfc/rfc9110
+Majority of ABNF grammar (grammar.bnf) and certain texts within the README.md file
+are licensed under Revised BSD License - https://spdx.org/licenses/BSD-3-Clause.html.
+
+Media Type Specifications and Registration Procedures
+Copyright (c) 2013 IETF Trust and the persons identified as the document authors.  All rights reserved.
+https://www.rfc-editor.org/rfc/rfc6838
+Certain texts within the README.md file are licensed under Revised BSD License - https://spdx.org/licenses/BSD-3-Clause.html.
+
+web-platform-tests
+Copyright (c) web-platform-tests contributors
+https://github.com/web-platform-tests/wpt
+Test fixtures in test/compliance/fixtures/wpt/ are licensed under 3-Clause BSD License.
+Copy of the license can be found in `test/compliance/fixtures/wpt/LICENSE.md` file.
+
+negotiator
+Copyright (c) 2012-2014 Federico Romero
+Copyright (c) 2012-2014 Isaac Z. Schlueter
+Copyright (c) 2014-2015 Douglas Christopher Wilson
+https://github.com/jshttp/negotiator
+Test fixtures in test/compliance/fixtures/negotiator/ are licensed under MIT License.
+Copy of the license can be found in `test/compliance/fixtures/negotiator/LICENSE` file.

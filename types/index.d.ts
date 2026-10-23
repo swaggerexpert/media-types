@@ -1,0 +1,193 @@
+export type MediaTypeString = string;
+export type MediaRangeString = string;
+export type AcceptString = string;
+
+/**
+ * Parsing
+ */
+export function parse(
+  source: MediaTypeString,
+  options?: ParseOptions<'media-type'>,
+): ParseResult<MediaType>;
+export function parse(
+  source: MediaRangeString,
+  options: ParseOptions<'media-range'>,
+): ParseResult<MediaRange>;
+export function parse(source: AcceptString, options: ParseOptions<'Accept'>): ParseResult<Accept>;
+export function parse<TTree>(
+  source: string,
+  options: ParseOptions<StartRule, Translator<TTree>>,
+): ParseResult<TTree>;
+export function parse(
+  source: string,
+  options: ParseOptions<StartRule, null>,
+): ParseResult<undefined>;
+
+export type StartRule = 'media-type' | 'media-range' | 'Accept';
+
+export interface ParseOptions<
+  TStartRule extends StartRule = 'media-type',
+  TTranslator = ASTTranslator,
+> {
+  readonly startRule?: TStartRule;
+  readonly translator?: TTranslator | null;
+  readonly stats?: boolean;
+  readonly trace?: boolean;
+}
+
+export interface Translator<TTree = unknown> {
+  getTree(): TTree;
+}
+export declare class CSTTranslator implements Translator<CSTTree> {
+  getTree(): CSTTree;
+}
+export declare class ASTTranslator implements Translator<ASTTree> {
+  getTree(): ASTTree;
+}
+export declare class XMLTranslator implements Translator<XMLTree> {
+  getTree(): XMLTree;
+}
+
+export interface CSTNode {
+  readonly type:
+    | 'Accept'
+    | 'media-range'
+    | 'weight'
+    | 'qvalue'
+    | 'media-type'
+    | 'type'
+    | 'subtype'
+    | 'parameters'
+    | 'parameter'
+    | 'parameter-name'
+    | 'parameter-value';
+  readonly text: string;
+  readonly start: number;
+  readonly length: number;
+  readonly children: CSTNode[];
+}
+
+export interface CSTTree {
+  readonly root: CSTNode;
+}
+
+export interface MediaType {
+  readonly type: string;
+  readonly subtype: string;
+  readonly suffix?: string;
+  readonly parameters: Record<string, string>;
+}
+
+export type MediaRange = MediaType;
+
+export interface AcceptElement extends MediaRange {
+  /**
+   * Weight is NaN when the "q" parameter value is not a valid qvalue.
+   */
+  readonly weight: number;
+}
+
+export type Accept = AcceptElement[];
+
+export type ASTTree = MediaType | MediaRange | Accept;
+
+export type XMLTree = string;
+
+export interface ParseResult<TTree = ASTTree> {
+  readonly result: {
+    readonly success: boolean;
+    readonly state: number;
+    readonly stateName: string;
+    readonly length: number;
+    readonly matched: number;
+    readonly maxMatched: number;
+    readonly maxTreeDepth: number;
+    readonly nodeHits: number;
+  };
+  readonly tree?: TTree;
+  readonly stats?: Stats;
+  readonly trace?: Trace;
+}
+
+export interface Stats {
+  displayStats(): string;
+  displayHits(): string;
+}
+
+export interface Trace {
+  displayTrace(): string;
+  inferExpectations(): string[];
+}
+
+/**
+ * Testing
+ */
+export function testMediaType(source: unknown): source is MediaTypeString;
+export function testMediaRange(source: unknown): source is MediaRangeString;
+export function testAccept(source: unknown): source is AcceptString;
+
+/**
+ * Matching
+ */
+export function matches(
+  mediaRange: MediaRangeString | MediaRange,
+  mediaType: MediaTypeString | MediaType,
+): boolean;
+export function selectBestMatch<T extends MediaRangeString | MediaRange>(
+  mediaRanges: Iterable<T>,
+  mediaType: MediaTypeString | MediaType,
+): T | undefined;
+export function quality(
+  accept: AcceptString | Accept | undefined,
+  mediaType: MediaTypeString | MediaType,
+): number;
+export function negotiate<T extends MediaTypeString | MediaType>(
+  accept: AcceptString | Accept | undefined,
+  mediaTypes: Iterable<T>,
+): T[];
+
+/**
+ * Grammar
+ */
+export function Grammar(): Grammar;
+
+export interface Grammar {
+  grammarObject: string; // Internal identifier
+  rules: Rule[]; // List of grammar rules
+  udts: UDT[]; // User-defined terminals (empty in this grammar)
+  toString(): string; // Method to return the grammar in ABNF format
+}
+
+export interface Rule {
+  name: string; // Rule name
+  lower: string; // Lowercased rule name
+  index: number; // Rule index
+  isBkr: boolean; // Is this a back-reference?
+  opcodes?: Opcode[]; // List of opcodes for the rule
+}
+
+export type Opcode =
+  | { type: 1; children: number[] } // ALT (Alternation)
+  | { type: 2; children: number[] } // CAT (Concatenation)
+  | { type: 3; min: number; max: number } // REP (Repetition)
+  | { type: 4; index: number } // RNM (Rule reference)
+  | { type: 5; min: number; max: number } // TRG (Terminal range)
+  | { type: 6 | 7; string: number[] }; // TBS or TLS (Byte sequence or Literal string)
+
+export type UDT = {}; // User-defined terminals (empty in this grammar)
+
+/**
+ * Errors
+ */
+export declare class MediaTypeError extends Error {
+  constructor(message?: string, options?: MediaTypeErrorOptions);
+}
+export declare class MediaTypeParseError extends MediaTypeError {
+  readonly source?: string;
+  readonly startRule?: StartRule;
+}
+
+export interface MediaTypeErrorOptions {
+  readonly cause?: unknown;
+  readonly [key: string]: unknown;
+}
