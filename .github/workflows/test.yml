@@ -23,3 +23,49 @@ jobs:
         run: npm ci
       - name: Execute tests
         run: npm test
+      - name: Build artifacts
+        run: npm run build
+      - name: Test artifacts
+        run: npm run test:artifacts
+      - name: Test typings
+        run: npm run test:types
+      - name: Pack tarball
+        run: npm pack --pack-destination ./pack
+      - name: Upload tarball
+        uses: actions/upload-artifact@v4
+        with:
+          name: tarball
+          path: |
+            pack/*.tgz
+            test/artifacts/smoke.cjs
+
+  compatibility:
+    needs: test
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        # oldest supported version (engines in package.json) and maintained versions
+        node-version: [ 12.20.0, 14, 16, 18, 20, 22, 24 ]
+
+    steps:
+      - name: Download tarball
+        uses: actions/download-artifact@v4
+        with:
+          name: tarball
+      - name: Use Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: Install tarball into a new project
+        run: |
+          mkdir consumer
+          cd consumer
+          npm init -y
+          npm install ../pack/*.tgz
+          # the package is resolved relative to the script, so the script must be inside the project
+          cp ../test/artifacts/smoke.cjs .
+      - name: Test installed package
+        working-directory: consumer
+        run: node smoke.cjs
