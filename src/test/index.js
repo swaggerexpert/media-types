@@ -6,7 +6,11 @@ import { startRules } from '../parse/rule.js';
  * and is equivalent to the success of parsing.
  */
 const test = (source, { type } = {}) => {
-  if (type !== undefined && !Object.prototype.hasOwnProperty.call(startRules, type)) {
+  if (
+    type !== undefined &&
+    type !== null &&
+    !Object.prototype.hasOwnProperty.call(startRules, type)
+  ) {
     throw new TypeError(`Type must be one of ${Object.keys(startRules).join(', ')}`);
   }
 

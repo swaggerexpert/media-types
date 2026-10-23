@@ -280,8 +280,8 @@ identify('text/*'); // => 'media-range'
 identify('*/*'); // => 'media-range'
 identify('text/html, */*;q=0.1'); // => 'accept'
 identify('text/html;q=0.5'); // => 'accept'
-identify('garbage'); // => undefined
-identify(''); // => undefined
+identify('garbage'); // => null
+identify(''); // => null
 ```
 
 Rules:
@@ -292,7 +292,7 @@ Rules:
   named `q` are disallowed ([RFC 9110, Section 12.5.1](https://www.rfc-editor.org/rfc/rfc9110#section-12.5.1)).
 - Any other single media type is a media type.
 - List of media ranges is an `Accept` field value.
-- Empty list (e.g. `''` or `', ,'`) and invalid source are not identified.
+- Empty list (e.g. `''` or `', ,'`) and invalid source are not identified (`null`).
 
 #### Validation
 
@@ -341,13 +341,13 @@ matches('*/*;charset=utf-8', 'text/plain;charset=UTF-8'); // => true
 ##### selectBestMatch
 
 Selects the most specific media range matching a media type, e.g. selecting a key from an OpenAPI `content` map
-for a response `Content-Type`. On equal specificity, the first media range wins. Returns `undefined` when nothing matches.
+for a response `Content-Type`. On equal specificity, the first media range wins. Returns `null` when nothing matches.
 
 ```js
 import { selectBestMatch } from '@swaggerexpert/media-types';
 
 selectBestMatch(['*/*', 'application/*', 'application/json'], 'application/json; charset=utf-8'); // => 'application/json'
-selectBestMatch(['application/*', 'text/plain'], 'image/png'); // => undefined
+selectBestMatch(['application/*', 'text/plain'], 'image/png'); // => null
 ```
 
 ##### quality

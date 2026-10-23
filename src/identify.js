@@ -11,10 +11,10 @@ import ASTTranslator from './parse/translators/ASTTranslator.js';
  * - single media type with "*" subtype is a media range (https://www.rfc-editor.org/rfc/rfc9110#section-12.5.1)
  * - any other single media type is a media type
  * - list of media ranges is an Accept field value
- * - list without any elements is not identified
+ * - list without any elements is not identified (null)
  */
 const identify = (source) => {
-  if (typeof source !== 'string') return undefined;
+  if (typeof source !== 'string') return null;
 
   const mediaType = parseRule(source, 'media-type', { translator: new ASTTranslator() });
 
@@ -28,7 +28,7 @@ const identify = (source) => {
 
   const accept = parseRule(source, 'accept', { translator: new ASTTranslator() });
 
-  return accept.result.success && accept.tree.length > 0 ? 'accept' : undefined;
+  return accept.result.success && accept.tree.length > 0 ? 'accept' : null;
 };
 
 export default identify;

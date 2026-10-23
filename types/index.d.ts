@@ -33,7 +33,7 @@ export function parse(source: string, options?: ParseOptions): ParseResult<ASTTr
 export type Type = 'media-type' | 'media-range' | 'accept';
 
 export interface ParseOptions {
-  readonly type?: Type;
+  readonly type?: Type | null;
   readonly translator?: Translator | null;
   readonly stats?: boolean;
   readonly trace?: boolean;
@@ -42,9 +42,9 @@ export interface ParseOptions {
 /**
  * Identification
  *
- * Identifies the narrowest type the source is valid as, or undefined.
+ * Identifies the narrowest type the source is valid as, or null.
  */
-export function identify(source: unknown): Type | undefined;
+export function identify(source: unknown): Type | null;
 
 export interface Translator<TTree = unknown> {
   getTree(): TTree;
@@ -136,7 +136,7 @@ export interface Trace {
 export function test(source: unknown, options?: TestOptions): source is string;
 
 export interface TestOptions {
-  readonly type?: Type;
+  readonly type?: Type | null;
 }
 
 /**
@@ -153,7 +153,7 @@ export function matches(
 export function selectBestMatch<T extends MediaRangeString | MediaRange>(
   mediaRanges: Iterable<T>,
   mediaType: MediaTypeString | MediaType,
-): T | undefined;
+): T | null;
 export function quality(
   accept: AcceptString | Accept | undefined,
   mediaType: MediaTypeString | MediaType,

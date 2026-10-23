@@ -69,6 +69,11 @@ describe('test', function () {
     });
   });
 
+  specify('should treat null type as no type', function () {
+    assert.isTrue(test('text/html, */*', { type: null }));
+    assert.isFalse(test('', { type: null }));
+  });
+
   specify('should return false for non-string sources', function () {
     assert.isFalse(test(1));
     assert.isFalse(test(null));

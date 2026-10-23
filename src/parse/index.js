@@ -10,7 +10,11 @@ const parse = (
     throw new TypeError('Source must be a string');
   }
 
-  if (type !== undefined && !Object.prototype.hasOwnProperty.call(startRules, type)) {
+  if (
+    type !== undefined &&
+    type !== null &&
+    !Object.prototype.hasOwnProperty.call(startRules, type)
+  ) {
     throw new TypeError(`Type must be one of ${Object.keys(startRules).join(', ')}`);
   }
 

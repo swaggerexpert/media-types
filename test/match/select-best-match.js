@@ -24,9 +24,9 @@ describe('selectBestMatch', function () {
     assert.strictEqual(selectBestMatch(['text/html', 'TEXT/HTML'], 'text/html'), 'text/html');
   });
 
-  specify('should return undefined when nothing matches', function () {
-    assert.isUndefined(selectBestMatch(['text/*'], 'application/json'));
-    assert.isUndefined(selectBestMatch([], 'application/json'));
+  specify('should return null when nothing matches', function () {
+    assert.isNull(selectBestMatch(['text/*'], 'application/json'));
+    assert.isNull(selectBestMatch([], 'application/json'));
   });
 
   specify('should skip invalid media ranges', function () {
@@ -39,8 +39,8 @@ describe('selectBestMatch', function () {
     );
   });
 
-  specify('should return undefined for invalid media type', function () {
-    assert.isUndefined(selectBestMatch(['*/*'], 'garbage'));
+  specify('should return null for invalid media type', function () {
+    assert.isNull(selectBestMatch(['*/*'], 'garbage'));
   });
 
   specify('should accept any iterable', function () {

@@ -56,7 +56,7 @@ describe('identify', function () {
       {},
     ].forEach((source) => {
       specify(`should not identify ${JSON.stringify(source)}`, function () {
-        assert.isUndefined(identify(source));
+        assert.isNull(identify(source));
       });
     });
   });

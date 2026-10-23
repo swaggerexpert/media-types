@@ -62,6 +62,17 @@ describe('parse', function () {
       });
     });
 
+    context('given null type', function () {
+      specify('should identify the type', function () {
+        assert.deepEqual(parse('text/*', { type: null }).tree, {
+          type: 'text',
+          subtype: '*',
+          parameters: {},
+        });
+        assert.isFalse(parse('garbage', { type: null }).result.success);
+      });
+    });
+
     context('given unknown type', function () {
       specify('should throw TypeError', function () {
         assert.throws(() => parse('text/html', { type: 'Accept' }), TypeError);
