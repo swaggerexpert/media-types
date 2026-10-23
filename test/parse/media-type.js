@@ -164,7 +164,9 @@ describe('parse', function () {
           );
           assert.strictEqual(parseResult.tree.parameters.constructor, 'y');
           assert.strictEqual(Object.getPrototypeOf(parseResult.tree.parameters), Object.prototype);
-          assert.isUndefined({}.x);
+          assert.strictEqual(parseResult.tree.parameters.__proto__, 'x');
+          assert.strictEqual(Object.getPrototypeOf({}), Object.prototype);
+          assert.isUndefined(Object.prototype.x);
         });
       });
 

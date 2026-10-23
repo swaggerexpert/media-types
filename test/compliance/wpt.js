@@ -95,18 +95,49 @@ describe('compliance', function () {
     });
 
     context('generated-mime-types.json', function () {
-      // The WHATWG algorithm recovers from invalid parameters by dropping them, and from
-      // non-token parameter values by quoting them. RFC 9110 allows neither.
-      loadFixture('generated-mime-types.json').forEach(({ input, output }) => {
-        const isUnquotedValue = input.startsWith('x/x;x=') && !input.startsWith('x/x;x="');
-        const expected = output === 'x/x;bonus=x' || isUnquotedValue ? null : output;
+      // https://github.com/web-platform-tests/wpt/blob/0f195499f06d0833e768b01a1a8ce942b8622fc8/mimesniff/mime-types/resources/generated-mime-types.py
+      // Every case places a single non-token code point into a type, subtype, parameter name,
+      // unquoted parameter value or quoted parameter value. Validity is derived from RFC 9110:
+      // only a quoted parameter value can contain such code point, when it is qdtext.
+      // https://www.rfc-editor.org/rfc/rfc9110#section-5.6.4
+      const isQdtext = (code) =>
+        code === 0x09 ||
+        code === 0x20 ||
+        code === 0x21 ||
+        (code >= 0x23 && code <= 0x5b) ||
+        (code >= 0x5d && code <= 0x7e) ||
+        (code >= 0x80 && code <= 0xff);
 
-        specify(
-          `should parse ${JSON.stringify(input)} as ${JSON.stringify(expected)}`,
-          function () {
-            assert.strictEqual(parseAndSerialize(input), expected);
-          },
-        );
+      const scenarios = [
+        {
+          name: 'quoted parameter value',
+          pattern: /^x\/x;x="([\s\S])";bonus=x$/,
+          isValid: isQdtext,
+        },
+        { name: 'parameter value', pattern: /^x\/x;x=([\s\S]);bonus=x$/, isValid: () => false },
+        { name: 'parameter name', pattern: /^x\/x;([\s\S])=x;bonus=x$/, isValid: () => false },
+        { name: 'subtype', pattern: /^x\/([\s\S])$/, isValid: () => false },
+        { name: 'type', pattern: /^([\s\S])\/x$/, isValid: () => false },
+      ];
+
+      loadFixture('generated-mime-types.json').forEach(({ input, output }) => {
+        const scenario = scenarios.find(({ pattern }) => pattern.test(input));
+
+        specify(`should handle ${JSON.stringify(input)}`, function () {
+          assert.isDefined(scenario, 'unknown generated case');
+
+          const code = scenario.pattern.exec(input)[1].charCodeAt(0);
+          const isTypeScenario = scenario.name === 'type' || scenario.name === 'subtype';
+
+          // WHATWG rejects invalid types and subtypes, and recovers from invalid parameters
+          assert.strictEqual(output === null, isTypeScenario, 'unexpected WHATWG output');
+
+          if (scenario.isValid(code)) {
+            assert.strictEqual(parseAndSerialize(input), output);
+          } else {
+            assert.isNull(parseAndSerialize(input));
+          }
+        });
       });
     });
   });
