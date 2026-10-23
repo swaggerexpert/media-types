@@ -80,4 +80,5 @@ The build produces three formats:
 - `cjs/` - CommonJS (.cjs)
 - `dist/` - UMD browser bundles (media-types.browser.js, media-types.browser.min.js)
 
-TypeScript types are in `types/index.d.ts`.
+TypeScript types are in `types/index.d.ts` (ESM). The build copies it to `types/index.d.cts` (generated, gitignored),
+which the `require` export condition points to, so that CommonJS consumers with `node16`/`nodenext` resolution get types.

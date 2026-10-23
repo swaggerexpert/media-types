@@ -13,9 +13,14 @@
   "types": "./types/index.d.ts",
   "exports": {
     ".": {
-      "types": "./types/index.d.ts",
-      "import": "./es/index.mjs",
-      "require": "./cjs/index.cjs"
+      "import": {
+        "types": "./types/index.d.ts",
+        "default": "./es/index.mjs"
+      },
+      "require": {
+        "types": "./types/index.d.cts",
+        "default": "./cjs/index.cjs"
+      }
     },
     "./package.json": "./package.json",
     "./grammar.bnf": "./src/grammar.bnf"
@@ -26,10 +31,11 @@
   "scripts": {
     "prepublishOnly": "npm run build",
     "grammar:compile": "node ./scripts/apg-js.js --lite --in=./src/grammar.bnf --out=./src/grammar.js",
-    "build": "npm run grammar:compile && npm run build:es && npm run build:cjs && npm run build:cjs:apg-lite && npm run build:umd:browser",
+    "build": "npm run grammar:compile && npm run build:es && npm run build:cjs && npm run build:cjs:apg-lite && npm run build:types && npm run build:umd:browser",
     "build:es": "cross-env BABEL_ENV=es babel src --out-dir es --extensions '.js' --out-file-extension '.mjs'",
     "build:cjs": "cross-env BABEL_ENV=cjs babel src --out-dir cjs --extensions '.js' --out-file-extension '.cjs'",
     "build:cjs:apg-lite": "cross-env BABEL_ENV=cjs babel node_modules/apg-lite/lib/parser.js --out-file ./cjs/apg-lite.cjs",
+    "build:types": "node -e \"require('node:fs').copyFileSync('types/index.d.ts', 'types/index.d.cts')\"",
     "build:umd:browser": "cross-env BABEL_ENV=browser webpack --config config/webpack/browser.config.js --progress",
     "test": "mocha",
     "test:watch": "npm-watch test",

@@ -6,3 +6,4 @@ node_modules/
 /es
 /dist
 /swaggerexpert-media-types-*.tgz
+/types/index.d.cts
