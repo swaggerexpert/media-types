@@ -8,8 +8,6 @@ class CSTTranslator extends AST {
 
     this.callbacks['Accept'] = cstCallback('Accept');
     this.callbacks['media-range'] = cstCallback('media-range');
-    this.callbacks['weight'] = cstCallback('weight');
-    this.callbacks['qvalue'] = cstCallback('qvalue');
     this.callbacks['media-type'] = cstCallback('media-type');
     this.callbacks['type'] = cstCallback('type');
     this.callbacks['subtype'] = cstCallback('subtype');

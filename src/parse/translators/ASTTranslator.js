@@ -1,9 +1,6 @@
 import CSTTranslator from './CSTTranslator.js';
 import testQValue from '../../test/qvalue.js';
-
-const childOfType = (node, type) => node.children.find((child) => child.type === type);
-
-const childrenOfType = (node, type) => node.children.filter((child) => child.type === type);
+import { childOfType, childrenOfType, hasOwn } from '../../utils.js';
 
 /**
  * Removes surrounding double quotes and resolves quoted-pairs.
@@ -42,7 +39,7 @@ const transformParameters = (node) => {
 const assignParameter = (parameters, name, value) => {
   // a parameter must not occur more than once; first occurrence wins
   // https://www.rfc-editor.org/rfc/rfc6838#section-4.3
-  if (Object.prototype.hasOwnProperty.call(parameters, name)) return;
+  if (hasOwn(parameters, name)) return;
 
   Object.defineProperty(parameters, name, {
     value,
@@ -71,39 +68,27 @@ const transformMediaType = (node, parameterList) => {
 /**
  * Recipients process any parameter named "q" as weight, regardless of parameter ordering.
  * https://www.rfc-editor.org/rfc/rfc9110#section-12.5.1
+ *
+ * The weight rule of the grammar never matches, as the preceding parameters rule always consumes
+ * the "q" parameter, so the weight is always taken from the parameters.
  */
-const transformAcceptElement = (mediaRangeNode, weightNode) => {
+const transformAcceptElement = (mediaRangeNode) => {
   const parameterList = transformParameters(childOfType(mediaRangeNode, 'parameters'));
   const qParameter = parameterList.find(({ name }) => name === 'q');
-  const qvalue = weightNode ? childOfType(weightNode, 'qvalue').text : qParameter?.value;
   const mediaRange = transformMediaType(
     mediaRangeNode,
     parameterList.filter(({ name }) => name !== 'q'),
   );
 
   let weight = 1;
-  if (qvalue !== undefined) {
-    weight = testQValue(qvalue) ? parseFloat(qvalue) : NaN;
+  if (qParameter !== undefined) {
+    weight = testQValue(qParameter.value) ? parseFloat(qParameter.value) : NaN;
   }
 
   return { ...mediaRange, weight };
 };
 
-const transformAccept = (node) => {
-  const elements = [];
-
-  node.children.forEach((child) => {
-    if (child.type === 'media-range') {
-      elements.push({ mediaRangeNode: child, weightNode: undefined });
-    } else if (child.type === 'weight') {
-      elements[elements.length - 1].weightNode = child;
-    }
-  });
-
-  return elements.map(({ mediaRangeNode, weightNode }) =>
-    transformAcceptElement(mediaRangeNode, weightNode),
-  );
-};
+const transformAccept = (node) => childrenOfType(node, 'media-range').map(transformAcceptElement);
 
 class ASTTranslator extends CSTTranslator {
   getTree() {

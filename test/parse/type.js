@@ -100,6 +100,13 @@ describe('parse', function () {
       );
     });
 
+    context('given options of wrong type', function () {
+      specify('should throw TypeError', function () {
+        assert.throws(() => parse('text/html', 'accept'), TypeError);
+        assert.throws(() => parse('text/html', [{ type: 'accept' }]), TypeError);
+      });
+    });
+
     context('given unknown type', function () {
       specify('should throw TypeError', function () {
         assert.throws(() => parse('text/html', { type: 'Accept' }), TypeError);

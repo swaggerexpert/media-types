@@ -96,4 +96,9 @@ describe('test', function () {
     assert.throws(() => test('text/html', { type: 'Accept' }), TypeError);
     assert.throws(() => test('text/html', { type: ['accept'] }), TypeError);
   });
+
+  specify('should throw TypeError for options of wrong type', function () {
+    assert.throws(() => test('text/html', 'accept'), TypeError);
+    assert.throws(() => test('text/html', ['accept']), TypeError);
+  });
 });

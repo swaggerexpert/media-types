@@ -1,18 +1,9 @@
-import { Parser } from 'apg-lite';
+import { parseRule } from '../parse/rule.js';
 
-import Grammar from '../grammar.js';
-
-const grammar = new Grammar();
-
-const testQValue = (qvalue) => {
-  if (typeof qvalue !== 'string') return false;
-
-  try {
-    const parser = new Parser();
-    return parser.parse(grammar, 'qvalue', qvalue).success;
-  } catch {
-    return false;
-  }
-};
+/**
+ * https://www.rfc-editor.org/rfc/rfc9110#section-12.4.2
+ */
+const testQValue = (qvalue) =>
+  typeof qvalue === 'string' && parseRule(qvalue, 'qvalue').result.success;
 
 export default testQValue;
