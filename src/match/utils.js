@@ -124,19 +124,19 @@ const hasOwn = (object, property) => Object.prototype.hasOwnProperty.call(object
 const parameterMatchings = ['required', 'compatible'];
 
 /**
- * Validates the parameters option of matching functions.
+ * Validates the parameterMatching option of matching functions.
  * Both undefined and null mean the default "required" parameter matching.
  */
 export const normalizeParameterMatching = (options) => {
-  const parameters = options?.parameters;
+  const parameterMatching = options?.parameterMatching;
 
-  if (parameters === undefined || parameters === null) return 'required';
+  if (parameterMatching === undefined || parameterMatching === null) return 'required';
 
-  if (!parameterMatchings.includes(parameters)) {
-    throw new TypeError(`Parameters must be one of ${parameterMatchings.join(', ')}`);
+  if (!parameterMatchings.includes(parameterMatching)) {
+    throw new TypeError(`Parameter matching must be one of ${parameterMatchings.join(', ')}`);
   }
 
-  return parameters;
+  return parameterMatching;
 };
 
 const level = ({ type, subtype }) => {

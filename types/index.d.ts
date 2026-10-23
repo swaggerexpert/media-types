@@ -168,7 +168,7 @@ export function selectBestMatch<T extends MediaRangeString | MediaRange>(
 export type ParameterMatching = 'required' | 'compatible';
 
 export interface MatchOptions {
-  readonly parameters?: ParameterMatching | null;
+  readonly parameterMatching?: ParameterMatching | null;
 }
 
 export function quality(

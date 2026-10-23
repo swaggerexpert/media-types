@@ -65,7 +65,7 @@ describe('matches', function () {
   });
 
   context('given compatible parameters', function () {
-    const options = { parameters: 'compatible' };
+    const options = { parameterMatching: 'compatible' };
 
     specify('should ignore parameters present on one side only', function () {
       assert.isTrue(matches('application/json; charset=utf-8', 'application/json', options));
@@ -85,7 +85,10 @@ describe('matches', function () {
     });
   });
 
-  specify('should throw TypeError for unknown parameters option', function () {
-    assert.throws(() => matches('*/*', 'text/html', { parameters: 'Compatible' }), TypeError);
+  specify('should throw TypeError for unknown parameterMatching option', function () {
+    assert.throws(
+      () => matches('*/*', 'text/html', { parameterMatching: 'Compatible' }),
+      TypeError,
+    );
   });
 });

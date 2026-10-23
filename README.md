@@ -359,7 +359,7 @@ For selecting a key from an OpenAPI `content` map (request or response `Content-
 const keys = ['application/json; charset=utf-8', '*/*'];
 
 selectBestMatch(keys, 'application/json'); // => '*/*'
-selectBestMatch(keys, 'application/json', { parameters: 'compatible' }); // => 'application/json; charset=utf-8'
+selectBestMatch(keys, 'application/json', { parameterMatching: 'compatible' }); // => 'application/json; charset=utf-8'
 ```
 
 ##### quality
@@ -404,7 +404,7 @@ negotiate(undefined, ['application/json', 'text/html']); // => ['application/jso
 
 ##### Parameter matching
 
-`matches` and `selectBestMatch` accept the `parameters` option:
+`matches` and `selectBestMatch` accept the `parameterMatching` option:
 
 - `required` (default): every parameter of the media range must be present in the media type with an equal value.
   This is the [RFC 9110](https://www.rfc-editor.org/rfc/rfc9110#section-12.5.1) rule for `Accept`, where parameters of a media range are requirements.

@@ -66,7 +66,7 @@ describe('selectBestMatch', function () {
 
   context('given compatible parameters', function () {
     // https://github.com/swaggerexpert/media-types/issues/6
-    const options = { parameters: 'compatible' };
+    const options = { parameterMatching: 'compatible' };
     const cases = [
       ['application/json; charset=utf-8', ['application/json'], 'application/json'],
       ['application/json', ['application/json; charset=utf-8'], 'application/json; charset=utf-8'],
@@ -126,19 +126,25 @@ describe('selectBestMatch', function () {
 
       assert.strictEqual(selectBestMatch(mediaRanges, 'application/json'), '*/*');
       assert.strictEqual(
-        selectBestMatch(mediaRanges, 'application/json', { parameters: 'required' }),
+        selectBestMatch(mediaRanges, 'application/json', { parameterMatching: 'required' }),
         '*/*',
       );
       assert.strictEqual(
-        selectBestMatch(mediaRanges, 'application/json', { parameters: null }),
+        selectBestMatch(mediaRanges, 'application/json', { parameterMatching: null }),
         '*/*',
       );
       assert.strictEqual(selectBestMatch(mediaRanges, 'application/json', null), '*/*');
     });
   });
 
-  specify('should throw TypeError for unknown parameters option', function () {
-    assert.throws(() => selectBestMatch(['*/*'], 'text/html', { parameters: 'ignore' }), TypeError);
-    assert.throws(() => selectBestMatch(['*/*'], 'text/html', { parameters: true }), TypeError);
+  specify('should throw TypeError for unknown parameterMatching option', function () {
+    assert.throws(
+      () => selectBestMatch(['*/*'], 'text/html', { parameterMatching: 'ignore' }),
+      TypeError,
+    );
+    assert.throws(
+      () => selectBestMatch(['*/*'], 'text/html', { parameterMatching: true }),
+      TypeError,
+    );
   });
 });
