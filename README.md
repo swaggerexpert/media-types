@@ -80,6 +80,7 @@ Include following script tag into your HTML file:
 Global variable `MediaTypes` will be available in the browser matching interface of `@swaggerexpert/media-types` npm package.
 `media-types.browser.min.js` is [UMD](https://github.com/umdjs/umd?tab=readme-ov-file#umd-universal-module-definition) minified build artifact.
 There is also unminified `media-types.browser.js` artifact, suitable for debugging.
+The browser artifacts target the latest browsers; they can also be loaded via `require` in Node.js >= 14.
 
 ---
 
@@ -235,6 +236,9 @@ import { parse, XMLTranslator } from '@swaggerexpert/media-types';
 const { tree: XML } = parse('text/html;charset=utf-8', { translator: new XMLTranslator() });
 ```
 
+The XML has the format of [apg-lite](https://github.com/ldthomas/apg-lite) XML output, with XML special characters
+in the source and node texts escaped, so that it is always well-formed (e.g. for quoted parameter values containing `<` or `&`).
+
 ##### Statistics
 
 `parse` function returns additional statistical information about the parsing process.
@@ -327,6 +331,8 @@ Matching rules ([RFC 9110, Section 12.5.1](https://www.rfc-editor.org/rfc/rfc911
 - Every parameter of the media range must be present in the media type with an equal value. Values of `charset` parameter are compared case-insensitively ([RFC 9110, Section 8.3.2](https://www.rfc-editor.org/rfc/rfc9110#section-8.3.2)), other values are compared case-sensitively.
   See [Parameter matching](#parameter-matching) for the alternative used for OpenAPI `content` map lookup.
 - Precedence (specificity): `type/subtype` > `type/*` > `*/*`; on equal level, the media range with more matching parameters wins.
+- `q` parameter of a media range is ignored (e.g. `text/html;q=0.9` matches `text/html`), as it is always a weight
+  and media type parameters named `q` are disallowed ([RFC 9110, Section 12.5.1](https://www.rfc-editor.org/rfc/rfc9110#section-12.5.1)).
 
 ##### matches
 
@@ -435,8 +441,13 @@ and treat them as follows:
   `selectBestMatch` skips invalid media ranges, `quality` returns `0`, `negotiate` omits invalid media types).
 - From an invalid `Accept` field value, valid elements are recovered and invalid ones are ignored
   ([RFC 9110, Section 2.4](https://www.rfc-editor.org/rfc/rfc9110#section-2.4)). Elements with invalid `qvalue` are ignored as well.
+  Elements are separated by commas outside of quoted-strings; a double quote starts a quoted-string only
+  as a parameter value, and an unterminated quoted-string is treated as plain text. Recovery runs in linear time.
 - `Accept` field value without any usable element is treated as missing `Accept` field, i.e. any media type
-  is acceptable ([RFC 9110, Section 12.4.1](https://www.rfc-editor.org/rfc/rfc9110#section-12.4.1)).
+  is acceptable ([RFC 9110, Section 12.4.1](https://www.rfc-editor.org/rfc/rfc9110#section-12.4.1)),
+  so that a malformed `Accept` field does not make every response unacceptable. As long as at least one element
+  is usable, explicit preferences apply: `garbage, application/json;q=0` excludes `application/json`,
+  while `*/*;q=0.0000` alone (invalid `qvalue`) means no preference.
 - Missing `Accept` field can be passed as `undefined` or `null` (e.g. result of `headers.get('accept')`).
 - Arguments that are neither strings nor parsed ASTs of the expected kind throw `TypeError`
   (e.g. passing a parse result instead of its `tree`). Lists of media ranges or media types must be iterables
@@ -490,8 +501,11 @@ String(grammar);
 ## Compliance
 
 - **Grammar** is taken from the body of RFC 9110 rather than from its collected ABNF in Appendix A
-  (see [Errata ID 9164](https://www.rfc-editor.org/errata/eid9164)). The only modification is the order
-  of `media-range` alternatives, required by the ordered choice of the parser; the accepted language is unchanged.
+  (see [Errata ID 9164](https://www.rfc-editor.org/errata/eid9164)). There are two modifications, both marked
+  with `MODIFICATION:` in the grammar:
+  - the `Accept` list syntax uses the recipient form of [RFC 9110, Section 5.6.1.2](https://www.rfc-editor.org/rfc/rfc9110#section-5.6.1.2),
+    which accepts empty list elements, as recipients are required to;
+  - the order of `media-range` alternatives, required by the ordered choice of the parser; the accepted language is unchanged.
 - **Errata** of RFC 9110, RFC 6838 and RFC 5234 were reviewed. [Errata ID 7138](https://www.rfc-editor.org/errata/eid7138)
   (verified) corrects the `Accept` precedence example and is part of the test suite.
 - **[web-platform-tests](https://github.com/web-platform-tests/wpt/tree/master/mimesniff/mime-types)** MIME type
@@ -528,7 +542,8 @@ Media types, media ranges and `Accept` field values are defined by the following
 ; https://www.rfc-editor.org/rfc/rfc9110#section-12.5.1
 ; Accept = #( media-range [ weight ] )
 Accept          = [ ( media-range [ weight ] ) ] *( OWS "," OWS [ ( media-range [ weight ] ) ] )
-                ; list syntax expanded per recipient requirements
+                ; MODIFICATION: list syntax expanded using the recipient form, which accepts empty
+                ; list elements (e.g. ", text/html, ,"), as required from recipients
                 ; https://www.rfc-editor.org/rfc/rfc9110#section-5.6.1.2
 
 ; https://www.rfc-editor.org/rfc/rfc9110#section-12.5.1

@@ -16,7 +16,9 @@ nvm use                  # Switch to Node.js version from .nvmrc
 npm install              # Install dependencies
 npm run build            # Full build (grammar + ES + CJS + UMD browser bundles)
 npm run grammar:compile  # Compile ABNF grammar to parser (src/grammar.bnf → src/grammar.js)
-npm test                 # Run all tests with Mocha
+npm test                 # Run all tests with Mocha (against src/)
+npm run test:artifacts   # Smoke test built artifacts (es/, cjs/, dist/), run after npm run build
+npm run test:types       # Type check typings as CommonJS and ES module consumers, run after npm run build
 npm test -- --grep "pattern"  # Run specific tests matching pattern
 npm test -- test/parse/media-type.js  # Run a single test file
 ```
@@ -51,7 +53,7 @@ Located in `src/parse/translators/`:
 
 ### Error Hierarchy
 
-All errors extend `MediaTypeError`:
+All errors extend `MediaTypeError`. Error classes define their `name` explicitly, as minifiers mangle class names:
 - `MediaTypeParseError` - Unexpected parser failure (internal error, e.g. in a translator)
 
 Matching functions never throw on invalid strings: invalid media types/ranges never match, invalid `Accept`
@@ -71,14 +73,21 @@ The `type` option of `parse`/`test` is validated and normalized in one place (`n
 - `fixtures/wpt/` - web-platform-tests MIME type parsing tests (WHATWG algorithm, used as an oracle)
 - `fixtures/negotiator/` - negotiator media type negotiation tests, extracted as data
 
-Known WPT deviations (inputs the WHATWG algorithm recovers from, but RFC 9110 rejects) are listed explicitly in `wpt.js`.
+WPT deviations (inputs the WHATWG algorithm recovers from, but RFC 9110 rejects) are listed explicitly in `wpt.js`
+for the hand-written cases; for generated cases, validity is derived from RFC 9110 character classes.
+
+`test/artifacts/` tests built artifacts as consumers use them: `smoke.cjs` loads the package by name (CommonJS,
+ES module, UMD) and `types/` contains CommonJS and ES module consumers for `tsc`. CI runs the smoke test against
+the packed tarball installed into a new project on every Node.js version from `engines` up.
 
 ### Module Formats
 
 The build produces three formats:
 - `es/` - ES modules (.mjs)
-- `cjs/` - CommonJS (.cjs)
-- `dist/` - UMD browser bundles (media-types.browser.js, media-types.browser.min.js)
+- `cjs/` - CommonJS (.cjs), kept for backward compatibility; bundles its own copy of apg-lite (ES module only)
+  at `cjs/apg-lite.cjs`, imports are rewritten by `module-resolver` in `babel.config.cjs`
+- `dist/` - UMD browser bundles (media-types.browser.js, media-types.browser.min.js); `dist/package.json`
+  (copied from `config/webpack/dist-package.json`) marks them CommonJS, so that Node.js can `require` them
 
 TypeScript types are in `types/index.d.ts` (ESM). The build copies it to `types/index.d.cts` (generated, gitignored),
 which the `require` export condition points to, so that CommonJS consumers with `node16`/`nodenext` resolution get types.
