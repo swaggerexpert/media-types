@@ -264,7 +264,8 @@ export default function grammar(){
     str += "; https://www.rfc-editor.org/rfc/rfc9110#section-12.5.1\n";
     str += "; Accept = #( media-range [ weight ] )\n";
     str += "Accept          = [ ( media-range [ weight ] ) ] *( OWS \",\" OWS [ ( media-range [ weight ] ) ] )\n";
-    str += "                ; list syntax expanded per recipient requirements\n";
+    str += "                ; MODIFICATION: list syntax expanded using the recipient form, which accepts empty\n";
+    str += "                ; list elements (e.g. \", text/html, ,\"), as required from recipients\n";
     str += "                ; https://www.rfc-editor.org/rfc/rfc9110#section-5.6.1.2\n";
     str += "\n";
     str += "; https://www.rfc-editor.org/rfc/rfc9110#section-12.5.1\n";

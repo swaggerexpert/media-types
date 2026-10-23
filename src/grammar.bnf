@@ -6,7 +6,8 @@
 ; https://www.rfc-editor.org/rfc/rfc9110#section-12.5.1
 ; Accept = #( media-range [ weight ] )
 Accept          = [ ( media-range [ weight ] ) ] *( OWS "," OWS [ ( media-range [ weight ] ) ] )
-                ; list syntax expanded per recipient requirements
+                ; MODIFICATION: list syntax expanded using the recipient form, which accepts empty
+                ; list elements (e.g. ", text/html, ,"), as required from recipients
                 ; https://www.rfc-editor.org/rfc/rfc9110#section-5.6.1.2
 
 ; https://www.rfc-editor.org/rfc/rfc9110#section-12.5.1
