@@ -354,7 +354,7 @@ selectBestMatch(['application/*', 'text/plain'], 'image/png'); // => null
 
 Returns the quality value an `Accept` field value associates with a media type,
 determined by the matching media range with the highest precedence. Returns `0` when nothing matches,
-and `1` when the `Accept` field value is `undefined` (no `Accept` header field means any media type is acceptable).
+and `1` when the `Accept` field value is `undefined` or `null` (no `Accept` header field means any media type is acceptable).
 
 ```js
 import { quality } from '@swaggerexpert/media-types';
@@ -402,7 +402,10 @@ and treat them as follows:
   ([RFC 9110, Section 2.4](https://www.rfc-editor.org/rfc/rfc9110#section-2.4)). Elements with invalid `qvalue` are ignored as well.
 - `Accept` field value without any usable element is treated as missing `Accept` field, i.e. any media type
   is acceptable ([RFC 9110, Section 12.4.1](https://www.rfc-editor.org/rfc/rfc9110#section-12.4.1)).
-- Arguments that are neither strings nor parsed ASTs throw `TypeError`.
+- Missing `Accept` field can be passed as `undefined` or `null` (e.g. result of `headers.get('accept')`).
+- Arguments that are neither strings nor parsed ASTs of the expected kind throw `TypeError`
+  (e.g. passing a parse result instead of its `tree`). Lists of media ranges or media types must be iterables
+  other than strings; a string would otherwise be iterated character by character.
 
 ```js
 import { matches, selectBestMatch, negotiate } from '@swaggerexpert/media-types';

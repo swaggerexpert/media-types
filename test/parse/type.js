@@ -1,6 +1,6 @@
 import { assert } from 'chai';
 
-import { parse } from '../../src/index.js';
+import { parse, identify } from '../../src/index.js';
 
 describe('parse', function () {
   context('type', function () {
@@ -73,10 +73,39 @@ describe('parse', function () {
       });
     });
 
+    context('given null options', function () {
+      specify('should use defaults', function () {
+        assert.deepEqual(parse('text/*', null).tree, {
+          type: 'text',
+          subtype: '*',
+          parameters: {},
+        });
+      });
+    });
+
+    context('given type identified upfront', function () {
+      ['text/html', 'text/*', 'text/html, */*', 'text/html;q=0.5', 'garbage', ''].forEach(
+        (source) => {
+          specify(
+            `should be equivalent to parsing without type: ${JSON.stringify(source)}`,
+            function () {
+              const { result, tree } = parse(source, { type: identify(source) });
+              const expected = parse(source);
+
+              assert.strictEqual(result.success, expected.result.success);
+              assert.deepEqual(tree, expected.tree);
+            },
+          );
+        },
+      );
+    });
+
     context('given unknown type', function () {
       specify('should throw TypeError', function () {
         assert.throws(() => parse('text/html', { type: 'Accept' }), TypeError);
         assert.throws(() => parse('text/html', { type: 'nope' }), TypeError);
+        assert.throws(() => parse('text/html', { type: ['accept'] }), TypeError);
+        assert.throws(() => parse('text/html', { type: { toString: () => 'accept' } }), TypeError);
       });
     });
   });

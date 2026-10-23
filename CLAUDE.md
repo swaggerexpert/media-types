@@ -52,10 +52,14 @@ Located in `src/parse/translators/`:
 ### Error Hierarchy
 
 All errors extend `MediaTypeError`:
-- `MediaTypeParseError` - Unexpected parser failure (e.g. unknown start rule)
+- `MediaTypeParseError` - Unexpected parser failure (internal error, e.g. in a translator)
 
 Matching functions never throw on invalid strings: invalid media types/ranges never match, invalid `Accept`
-elements are skipped, and `Accept` without usable elements means no preference. Only wrong argument types throw `TypeError`.
+elements are skipped, and `Accept` without usable elements (or `undefined`/`null`) means no preference. Only wrong argument
+types throw `TypeError`; parsed values are shape-checked in `src/match/utils.js`.
+
+The `type` option of `parse`/`test` is validated and normalized in one place (`normalizeType` in `src/parse/rule.js`);
+`undefined` and `null` both mean "not specified".
 
 ### Compliance Tests
 

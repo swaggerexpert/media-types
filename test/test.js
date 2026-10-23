@@ -1,6 +1,6 @@
 import { assert } from 'chai';
 
-import { test, parse } from '../src/index.js';
+import { test, parse, identify } from '../src/index.js';
 
 describe('test', function () {
   context('given no type', function () {
@@ -63,7 +63,7 @@ describe('test', function () {
 
   specify('should be equivalent to the success of parsing', function () {
     ['text/html', 'text/*', 'a, b', '', 'text/html, */*', 'garbage'].forEach((source) => {
-      [undefined, 'media-type', 'media-range', 'accept'].forEach((type) => {
+      [undefined, null, 'media-type', 'media-range', 'accept'].forEach((type) => {
         assert.strictEqual(test(source, { type }), parse(source, { type }).result.success);
       });
     });
@@ -72,6 +72,17 @@ describe('test', function () {
   specify('should treat null type as no type', function () {
     assert.isTrue(test('text/html, */*', { type: null }));
     assert.isFalse(test('', { type: null }));
+  });
+
+  specify('should use defaults for null options', function () {
+    assert.isTrue(test('text/html', null));
+    assert.isFalse(test('garbage', null));
+  });
+
+  specify('should be equivalent to testing with identified type', function () {
+    ['text/html', 'text/*', 'text/html, */*', 'garbage', ''].forEach((source) => {
+      assert.strictEqual(test(source, { type: identify(source) }), test(source));
+    });
   });
 
   specify('should return false for non-string sources', function () {
@@ -83,5 +94,6 @@ describe('test', function () {
 
   specify('should throw TypeError for unknown type', function () {
     assert.throws(() => test('text/html', { type: 'Accept' }), TypeError);
+    assert.throws(() => test('text/html', { type: ['accept'] }), TypeError);
   });
 });

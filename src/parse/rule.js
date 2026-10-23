@@ -15,6 +15,20 @@ export const startRules = {
   accept: 'Accept',
 };
 
+/**
+ * Validates the type option. Both undefined and null mean that the type is not specified.
+ * Returns the type or undefined.
+ */
+export const normalizeType = (type) => {
+  if (type === undefined || type === null) return undefined;
+
+  if (typeof type !== 'string' || !Object.prototype.hasOwnProperty.call(startRules, type)) {
+    throw new TypeError(`Type must be one of ${Object.keys(startRules).join(', ')}`);
+  }
+
+  return type;
+};
+
 const parseRule = (source, type, { translator, stats = false, trace = false }) => {
   try {
     const parser = new Parser();

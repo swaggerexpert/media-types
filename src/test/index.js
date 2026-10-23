@@ -1,26 +1,19 @@
-import parse from '../parse/index.js';
-import { startRules } from '../parse/rule.js';
+import parseRule, { normalizeType } from '../parse/rule.js';
+import identify from '../identify.js';
 
 /**
  * Tests whether the source is valid. Accepts the same type option as parse,
  * and is equivalent to the success of parsing.
+ * Without type, the source is valid when it can be identified.
  */
-const test = (source, { type } = {}) => {
-  if (
-    type !== undefined &&
-    type !== null &&
-    !Object.prototype.hasOwnProperty.call(startRules, type)
-  ) {
-    throw new TypeError(`Type must be one of ${Object.keys(startRules).join(', ')}`);
-  }
+const test = (source, options) => {
+  const type = normalizeType(options?.type);
 
   if (typeof source !== 'string') return false;
 
-  try {
-    return parse(source, { type, translator: null }).result.success;
-  } catch {
-    return false;
-  }
+  if (type === undefined) return identify(source) !== null;
+
+  return parseRule(source, type, { translator: null }).result.success;
 };
 
 export default test;

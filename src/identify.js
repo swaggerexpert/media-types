@@ -1,5 +1,7 @@
 import parseRule from './parse/rule.js';
-import ASTTranslator from './parse/translators/ASTTranslator.js';
+import CSTTranslator from './parse/translators/CSTTranslator.js';
+
+const childrenOfType = (node, type) => node.children.filter((child) => child.type === type);
 
 /**
  * Identifies the narrowest kind of input the source is valid as.
@@ -16,19 +18,26 @@ import ASTTranslator from './parse/translators/ASTTranslator.js';
 const identify = (source) => {
   if (typeof source !== 'string') return null;
 
-  const mediaType = parseRule(source, 'media-type', { translator: new ASTTranslator() });
+  const mediaType = parseRule(source, 'media-type', { translator: new CSTTranslator() });
 
   if (mediaType.result.success) {
-    const { subtype, parameters } = mediaType.tree;
+    const { root } = mediaType.tree;
+    const [subtype] = childrenOfType(root, 'subtype');
+    const [parameters] = childrenOfType(root, 'parameters');
+    const hasQParameter = childrenOfType(parameters, 'parameter').some(
+      (parameter) => childrenOfType(parameter, 'parameter-name')[0].text.toLowerCase() === 'q',
+    );
 
-    if (Object.prototype.hasOwnProperty.call(parameters, 'q')) return 'accept';
-    if (subtype === '*') return 'media-range';
+    if (hasQParameter) return 'accept';
+    if (subtype.text === '*') return 'media-range';
     return 'media-type';
   }
 
-  const accept = parseRule(source, 'accept', { translator: new ASTTranslator() });
+  const accept = parseRule(source, 'accept', { translator: new CSTTranslator() });
 
-  return accept.result.success && accept.tree.length > 0 ? 'accept' : null;
+  return accept.result.success && childrenOfType(accept.tree.root, 'media-range').length > 0
+    ? 'accept'
+    : null;
 };
 
 export default identify;

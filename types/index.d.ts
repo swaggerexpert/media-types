@@ -28,7 +28,7 @@ export function parse(
   source: AcceptString,
   options: ParseOptions & { readonly type: 'accept' },
 ): ParseResult<Accept>;
-export function parse(source: string, options?: ParseOptions): ParseResult<ASTTree>;
+export function parse(source: string, options?: ParseOptions | null): ParseResult<ASTTree>;
 
 export type Type = 'media-type' | 'media-range' | 'accept';
 
@@ -133,7 +133,8 @@ export interface Trace {
 /**
  * Testing
  */
-export function test(source: unknown, options?: TestOptions): source is string;
+export function test(source: string, options?: TestOptions | null): boolean;
+export function test(source: unknown, options?: TestOptions | null): source is string;
 
 export interface TestOptions {
   readonly type?: Type | null;
@@ -144,7 +145,8 @@ export interface TestOptions {
  *
  * Matching functions never throw on invalid strings: invalid media types and media ranges never match,
  * invalid Accept elements are ignored, and Accept without usable elements means no preference.
- * Arguments that are neither strings nor parsed ASTs throw TypeError.
+ * Missing Accept field can be passed as undefined or null.
+ * Arguments that are neither strings nor parsed ASTs, and lists that are strings or not iterable, throw TypeError.
  */
 export function matches(
   mediaRange: MediaRangeString | MediaRange,
@@ -155,11 +157,11 @@ export function selectBestMatch<T extends MediaRangeString | MediaRange>(
   mediaType: MediaTypeString | MediaType,
 ): T | null;
 export function quality(
-  accept: AcceptString | Accept | undefined,
+  accept: AcceptString | Accept | null | undefined,
   mediaType: MediaTypeString | MediaType,
 ): number;
 export function negotiate<T extends MediaTypeString | MediaType>(
-  accept: AcceptString | Accept | undefined,
+  accept: AcceptString | Accept | null | undefined,
   mediaTypes: Iterable<T>,
 ): T[];
 
