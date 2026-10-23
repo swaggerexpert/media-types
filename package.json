@@ -5,7 +5,7 @@
     "registry": "https://registry.npmjs.org",
     "provenance": true
   },
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "RFC 9110 media type and media range parser, validator and matcher.",
   "unpkg": "./dist/media-types.browser.min.js",
   "jsdelivr": "./dist/media-types.browser.min.js",
