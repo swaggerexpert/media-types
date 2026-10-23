@@ -19,6 +19,7 @@ export const minimizeTrait = {
     minimizer: [
       new TerserPlugin({
         terserOptions: {
+          keep_classnames: true,
           compress: {
             warnings: false,
           },
