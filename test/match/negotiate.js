@@ -80,4 +80,18 @@ describe('negotiate', function () {
     assert.throws(() => negotiate(1, ['text/html']), TypeError);
     assert.throws(() => negotiate('*/*', [null]), TypeError);
   });
+
+  specify('should treat null Accept as missing Accept field', function () {
+    assert.deepEqual(negotiate(null, ['text/html', 'application/json']), [
+      'text/html',
+      'application/json',
+    ]);
+  });
+
+  specify('should throw TypeError when media types are not an iterable of values', function () {
+    assert.throws(() => negotiate('*/*', 'text/html'), TypeError);
+    assert.throws(() => negotiate('*/*', null), TypeError);
+    assert.throws(() => negotiate('*/*', undefined), TypeError);
+    assert.throws(() => negotiate('*/*', 1), TypeError);
+  });
 });

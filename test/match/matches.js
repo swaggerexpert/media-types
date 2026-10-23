@@ -54,4 +54,13 @@ describe('matches', function () {
     assert.throws(() => matches('*/*', null), TypeError);
     assert.throws(() => matches(undefined, 'text/html'), TypeError);
   });
+
+  specify('should throw TypeError for objects that are not parsed media types', function () {
+    assert.throws(() => matches({}, 'text/html'), TypeError);
+    assert.throws(() => matches('*/*', []), TypeError);
+    assert.throws(
+      () => matches('*/*', { type: 'text', subtype: 'html', parameters: null }),
+      TypeError,
+    );
+  });
 });

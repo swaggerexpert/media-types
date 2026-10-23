@@ -55,4 +55,18 @@ describe('quality', function () {
     assert.strictEqual(quality('', 'image/png'), 1);
     assert.strictEqual(quality('text/html;q=abc', 'image/png'), 1);
   });
+
+  specify('should treat null Accept as missing Accept field', function () {
+    assert.strictEqual(quality(null, 'text/html'), 1);
+    assert.strictEqual(quality(null, 'garbage'), 0);
+  });
+
+  specify('should throw TypeError on input of wrong type', function () {
+    assert.throws(() => quality([{ type: 'text' }], 'text/html'), TypeError);
+    assert.throws(
+      () => quality({ type: 'text', subtype: 'html', parameters: {} }, 'text/html'),
+      TypeError,
+    );
+    assert.throws(() => quality('*/*', 1), TypeError);
+  });
 });

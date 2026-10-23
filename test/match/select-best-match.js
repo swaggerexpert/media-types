@@ -1,6 +1,6 @@
 import { assert } from 'chai';
 
-import { selectBestMatch } from '../../src/index.js';
+import { selectBestMatch, parse } from '../../src/index.js';
 
 describe('selectBestMatch', function () {
   const mediaRanges = [
@@ -45,5 +45,22 @@ describe('selectBestMatch', function () {
 
   specify('should accept any iterable', function () {
     assert.strictEqual(selectBestMatch(new Set(['text/*']), 'text/html'), 'text/*');
+  });
+
+  specify('should throw TypeError when media ranges are not an iterable of values', function () {
+    assert.throws(() => selectBestMatch('application/json', 'application/json'), TypeError);
+    assert.throws(() => selectBestMatch(null, 'application/json'), TypeError);
+    assert.throws(() => selectBestMatch(1, 'application/json'), TypeError);
+  });
+
+  specify('should throw TypeError for values that are not parsed media types', function () {
+    // parse result instead of its tree
+    assert.throws(() => selectBestMatch(['*/*'], parse('text/html')), TypeError);
+    // parsed Accept field value instead of media type
+    assert.throws(
+      () => selectBestMatch(['*/*'], parse('text/html', { type: 'accept' }).tree),
+      TypeError,
+    );
+    assert.throws(() => selectBestMatch([{ type: '*', subtype: '*' }], 'text/html'), TypeError);
   });
 });

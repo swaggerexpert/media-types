@@ -1,14 +1,20 @@
-import { toAcceptMediaRanges, toMediaType, findMostSpecific, compareSpecificity } from './utils.js';
+import {
+  toList,
+  toAcceptMediaRanges,
+  toMediaType,
+  findMostSpecific,
+  compareSpecificity,
+} from './utils.js';
 
 /**
  * Orders available media types by preference expressed in the Accept field value.
  * Media types that are not acceptable (quality value of 0) or invalid are omitted.
- * A request without any Accept field implies that any media type is acceptable.
+ * A request without any Accept field (undefined or null) implies that any media type is acceptable.
  * https://www.rfc-editor.org/rfc/rfc9110#section-12.5.1
  */
 const negotiate = (accept, mediaTypes) => {
   const mediaRanges = toAcceptMediaRanges(accept);
-  const candidates = Array.from(mediaTypes)
+  const candidates = toList(mediaTypes, 'media types')
     .map((value, index) => ({ value, index, mediaType: toMediaType(value) }))
     .filter(({ mediaType }) => mediaType !== undefined);
 

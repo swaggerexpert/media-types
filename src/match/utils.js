@@ -1,8 +1,28 @@
 import parse from '../parse/index.js';
 
+const isPlainObject = (value) =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+const isMediaTypeAST = (value) =>
+  isPlainObject(value) &&
+  typeof value.type === 'string' &&
+  typeof value.subtype === 'string' &&
+  isPlainObject(value.parameters);
+
+const isAcceptAST = (value) =>
+  Array.isArray(value) &&
+  value.every((element) => isMediaTypeAST(element) && typeof element.weight === 'number');
+
+const describe = (value) => {
+  if (value === null) return 'null';
+  if (Array.isArray(value)) return 'array';
+  return typeof value;
+};
+
 /**
  * Turns a string into its AST, while already parsed values pass through.
- * Returns undefined for strings that are not valid according to the start rule.
+ * Returns undefined for strings that are not valid according to the type.
+ * Throws TypeError for values that are neither strings nor ASTs of the type.
  */
 const toAST = (value, type) => {
   if (typeof value === 'string') {
@@ -10,16 +30,32 @@ const toAST = (value, type) => {
     return parseResult.result.success ? parseResult.tree : undefined;
   }
 
-  if (typeof value === 'object' && value !== null) return value;
+  const isAST = type === 'accept' ? isAcceptAST(value) : isMediaTypeAST(value);
+  if (isAST) return value;
 
-  throw new TypeError(
-    `Expected string or parsed ${type}, got ${value === null ? 'null' : typeof value}`,
-  );
+  throw new TypeError(`Expected string or parsed ${type}, got ${describe(value)}`);
 };
 
 export const toMediaType = (value) => toAST(value, 'media-type');
 
 export const toMediaRange = (value) => toAST(value, 'media-range');
+
+/**
+ * Turns an iterable of values into an array.
+ * Strings are rejected, as they are iterable and would be split into characters.
+ */
+export const toList = (values, name) => {
+  if (
+    typeof values === 'string' ||
+    values === null ||
+    values === undefined ||
+    typeof values[Symbol.iterator] !== 'function'
+  ) {
+    throw new TypeError(`Expected ${name} to be an iterable of values, got ${describe(values)}`);
+  }
+
+  return Array.from(values);
+};
 
 /**
  * Splits a list field value on commas outside of quoted-strings.
@@ -58,12 +94,13 @@ const recoverAccept = (accept) =>
 
 /**
  * Returns usable media ranges of an Accept field value, or undefined when there is no preference.
+ * Both undefined and null Accept field value mean that the Accept field is missing.
  * Elements with invalid qvalue are not usable. Accept field value without any usable element
  * is treated the same as a missing Accept field.
  * https://www.rfc-editor.org/rfc/rfc9110#section-12.4.1
  */
 export const toAcceptMediaRanges = (accept) => {
-  if (accept === undefined) return undefined;
+  if (accept === undefined || accept === null) return undefined;
 
   const mediaRanges = (toAST(accept, 'accept') ?? recoverAccept(accept)).filter(
     ({ weight }) => !Number.isNaN(weight),
