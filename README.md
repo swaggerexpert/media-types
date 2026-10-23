@@ -48,6 +48,7 @@ and **parameters**. Matching follows the precedence rules of [RFC 9110, Section 
       - [selectBestMatch](#selectbestmatch)
       - [quality](#quality)
       - [negotiate](#negotiate)
+      - [Parameter matching](#parameter-matching)
       - [Invalid input](#invalid-input)
     - [Errors](#errors)
     - [Grammar](#grammar)
@@ -324,7 +325,8 @@ Matching rules ([RFC 9110, Section 12.5.1](https://www.rfc-editor.org/rfc/rfc911
 
 - `*/*` matches every media type, `type/*` matches every subtype of the type, otherwise type and subtype must be equal.
 - Every parameter of the media range must be present in the media type with an equal value. Values of `charset` parameter are compared case-insensitively ([RFC 9110, Section 8.3.2](https://www.rfc-editor.org/rfc/rfc9110#section-8.3.2)), other values are compared case-sensitively.
-- Precedence (specificity): `type/subtype` > `type/*` > `*/*`; on equal level, the media range with more parameters wins.
+  See [Parameter matching](#parameter-matching) for the alternative used for OpenAPI `content` map lookup.
+- Precedence (specificity): `type/subtype` > `type/*` > `*/*`; on equal level, the media range with more matching parameters wins.
 
 ##### matches
 
@@ -340,14 +342,24 @@ matches('*/*;charset=utf-8', 'text/plain;charset=UTF-8'); // => true
 
 ##### selectBestMatch
 
-Selects the most specific media range matching a media type, e.g. selecting a key from an OpenAPI `content` map
-for a response `Content-Type`. On equal specificity, the first media range wins. Returns `null` when nothing matches.
+Selects the most specific media range matching a media type. On equal specificity, the first media range wins.
+Returns `null` when nothing matches.
 
 ```js
 import { selectBestMatch } from '@swaggerexpert/media-types';
 
 selectBestMatch(['*/*', 'application/*', 'application/json'], 'application/json; charset=utf-8'); // => 'application/json'
 selectBestMatch(['application/*', 'text/plain'], 'image/png'); // => null
+```
+
+For selecting a key from an OpenAPI `content` map (request or response `Content-Type`), use
+[compatible parameter matching](#parameter-matching):
+
+```js
+const keys = ['application/json; charset=utf-8', '*/*'];
+
+selectBestMatch(keys, 'application/json'); // => '*/*'
+selectBestMatch(keys, 'application/json', { parameters: 'compatible' }); // => 'application/json; charset=utf-8'
 ```
 
 ##### quality
@@ -389,6 +401,29 @@ negotiate(accept, ['text/html', 'image/jpeg', 'text/plain', 'text/plain;format=f
 negotiate('application/json;q=0, */*', ['application/json', 'text/html']); // => ['text/html']
 negotiate(undefined, ['application/json', 'text/html']); // => ['application/json', 'text/html']
 ```
+
+##### Parameter matching
+
+`matches` and `selectBestMatch` accept the `parameters` option:
+
+- `required` (default): every parameter of the media range must be present in the media type with an equal value.
+  This is the [RFC 9110](https://www.rfc-editor.org/rfc/rfc9110#section-12.5.1) rule for `Accept`, where parameters of a media range are requirements.
+- `compatible`: parameters present on both sides must have an equal value, parameters present on one side only are ignored.
+  Suited for OpenAPI `content` map lookup, where a parameter on a key describes the content (e.g. `charset=utf-8`)
+  rather than demanding it from the media type being matched.
+
+| media type | media ranges | `required` | `compatible` |
+|---|---|---|---|
+| `application/json` | `application/json; charset=utf-8` | `null` | `application/json; charset=utf-8` |
+| `application/json` | `application/json; charset=utf-8`, `*/*` | `*/*` | `application/json; charset=utf-8` |
+| `application/vnd.x; version=2` | `application/vnd.x; version=1` | `null` | `null` |
+| `application/json` | `application/json; charset=utf-8`, `application/json` | `application/json` | `application/json` |
+
+With `compatible` parameter matching, the precedence on equal level is: more agreeing parameters,
+then fewer parameters present only on the media range, then the first media range.
+So an exactly declared media range wins over one with additional parameters, regardless of order.
+
+`quality` and `negotiate` always use `required` parameter matching, as parameters of `Accept` media ranges are requirements.
 
 ##### Invalid input
 

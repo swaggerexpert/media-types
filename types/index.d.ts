@@ -151,11 +151,26 @@ export interface TestOptions {
 export function matches(
   mediaRange: MediaRangeString | MediaRange,
   mediaType: MediaTypeString | MediaType,
+  options?: MatchOptions | null,
 ): boolean;
 export function selectBestMatch<T extends MediaRangeString | MediaRange>(
   mediaRanges: Iterable<T>,
   mediaType: MediaTypeString | MediaType,
+  options?: MatchOptions | null,
 ): T | null;
+/**
+ * Parameter matching:
+ * - "required" (default): every parameter of the media range must be present in the media type
+ *   with an equal value, as in Accept negotiation (RFC 9110, Section 12.5.1)
+ * - "compatible": parameters present on both sides must have an equal value, parameters present
+ *   on one side only are ignored; suited for OpenAPI content map lookup
+ */
+export type ParameterMatching = 'required' | 'compatible';
+
+export interface MatchOptions {
+  readonly parameters?: ParameterMatching | null;
+}
+
 export function quality(
   accept: AcceptString | Accept | null | undefined,
   mediaType: MediaTypeString | MediaType,

@@ -63,4 +63,82 @@ describe('selectBestMatch', function () {
     );
     assert.throws(() => selectBestMatch([{ type: '*', subtype: '*' }], 'text/html'), TypeError);
   });
+
+  context('given compatible parameters', function () {
+    // https://github.com/swaggerexpert/media-types/issues/6
+    const options = { parameters: 'compatible' };
+    const cases = [
+      ['application/json; charset=utf-8', ['application/json'], 'application/json'],
+      ['application/json', ['application/json; charset=utf-8'], 'application/json; charset=utf-8'],
+      [
+        'application/json; charset=utf-8',
+        ['application/json; charset=UTF-8'],
+        'application/json; charset=UTF-8',
+      ],
+      [
+        'application/vnd.x; version=2',
+        ['application/vnd.x; version=1', 'application/vnd.x; version=2'],
+        'application/vnd.x; version=2',
+      ],
+      ['application/vnd.x; version=2', ['application/vnd.x; version=1'], null],
+      [
+        'application/json',
+        ['application/json; charset=utf-8', '*/*'],
+        'application/json; charset=utf-8',
+      ],
+      [
+        'application/json',
+        ['application/json; charset=utf-8', 'application/json'],
+        'application/json',
+      ],
+      [
+        'application/json',
+        ['application/json', 'application/json; charset=utf-8'],
+        'application/json',
+      ],
+      ['text/plain; charset=iso-8859-1', ['text/plain; charset=utf-8', 'text/*'], 'text/*'],
+      ['application/json; charset=utf-16', ['application/json; charset=utf-8'], null],
+      [
+        'application/json; a=1',
+        ['application/json; b=2', 'application/json; a=1; c=3'],
+        'application/json; a=1; c=3',
+      ],
+      [
+        'application/json; charset=utf-8',
+        ['application/json', 'application/json; charset=utf-8'],
+        'application/json; charset=utf-8',
+      ],
+    ];
+
+    cases.forEach(([mediaType, mediaRanges, expected]) => {
+      specify(
+        `should select ${JSON.stringify(expected)} for ${JSON.stringify(mediaType)} from ${JSON.stringify(mediaRanges)}`,
+        function () {
+          assert.strictEqual(selectBestMatch(mediaRanges, mediaType, options), expected);
+        },
+      );
+    });
+  });
+
+  context('given required parameters', function () {
+    specify('should be the default', function () {
+      const mediaRanges = ['application/json; charset=utf-8', '*/*'];
+
+      assert.strictEqual(selectBestMatch(mediaRanges, 'application/json'), '*/*');
+      assert.strictEqual(
+        selectBestMatch(mediaRanges, 'application/json', { parameters: 'required' }),
+        '*/*',
+      );
+      assert.strictEqual(
+        selectBestMatch(mediaRanges, 'application/json', { parameters: null }),
+        '*/*',
+      );
+      assert.strictEqual(selectBestMatch(mediaRanges, 'application/json', null), '*/*');
+    });
+  });
+
+  specify('should throw TypeError for unknown parameters option', function () {
+    assert.throws(() => selectBestMatch(['*/*'], 'text/html', { parameters: 'ignore' }), TypeError);
+    assert.throws(() => selectBestMatch(['*/*'], 'text/html', { parameters: true }), TypeError);
+  });
 });

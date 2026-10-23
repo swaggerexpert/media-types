@@ -63,4 +63,29 @@ describe('matches', function () {
       TypeError,
     );
   });
+
+  context('given compatible parameters', function () {
+    const options = { parameters: 'compatible' };
+
+    specify('should ignore parameters present on one side only', function () {
+      assert.isTrue(matches('application/json; charset=utf-8', 'application/json', options));
+      assert.isTrue(matches('application/json', 'application/json; charset=utf-8', options));
+      assert.isTrue(matches('*/*; a=1', 'text/html; b=2', options));
+    });
+
+    specify('should require equal values of parameters present on both sides', function () {
+      assert.isTrue(matches('text/plain; charset=UTF-8', 'text/plain; charset=utf-8', options));
+      assert.isFalse(
+        matches('application/vnd.x; version=1', 'application/vnd.x; version=2', options),
+      );
+    });
+
+    specify('should still require matching type and subtype', function () {
+      assert.isFalse(matches('application/json; charset=utf-8', 'text/json', options));
+    });
+  });
+
+  specify('should throw TypeError for unknown parameters option', function () {
+    assert.throws(() => matches('*/*', 'text/html', { parameters: 'Compatible' }), TypeError);
+  });
 });

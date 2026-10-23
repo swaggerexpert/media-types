@@ -121,54 +121,106 @@ const parameterValuesEqual = (name, value1, value2) => {
 
 const hasOwn = (object, property) => Object.prototype.hasOwnProperty.call(object, property);
 
+const parameterMatchings = ['required', 'compatible'];
+
 /**
- * https://www.rfc-editor.org/rfc/rfc9110#section-12.5.1
+ * Validates the parameters option of matching functions.
+ * Both undefined and null mean the default "required" parameter matching.
  */
-export const isMatch = (mediaRange, mediaType) => {
+export const normalizeParameterMatching = (options) => {
+  const parameters = options?.parameters;
+
+  if (parameters === undefined || parameters === null) return 'required';
+
+  if (!parameterMatchings.includes(parameters)) {
+    throw new TypeError(`Parameters must be one of ${parameterMatchings.join(', ')}`);
+  }
+
+  return parameters;
+};
+
+const level = ({ type, subtype }) => {
+  if (type === '*' && subtype === '*') return 0;
+  if (subtype === '*') return 1;
+  return 2;
+};
+
+/**
+ * Matches media range against media type. Returns undefined when they do not match,
+ * otherwise specificity of the match.
+ *
+ * Parameter matching:
+ * - "required": every parameter of the media range must be present in the media type
+ *   with an equal value (https://www.rfc-editor.org/rfc/rfc9110#section-12.5.1)
+ * - "compatible": parameters present on both sides must have an equal value,
+ *   parameters present on one side only are ignored
+ */
+const match = (mediaRange, mediaType, parameterMatching) => {
   const isFullWildcard = mediaRange.type === '*' && mediaRange.subtype === '*';
 
   if (!isFullWildcard) {
-    if (mediaRange.type !== mediaType.type) return false;
-    if (mediaRange.subtype !== '*' && mediaRange.subtype !== mediaType.subtype) return false;
+    if (mediaRange.type !== mediaType.type) return undefined;
+    if (mediaRange.subtype !== '*' && mediaRange.subtype !== mediaType.subtype) return undefined;
   }
 
-  return Object.keys(mediaRange.parameters).every(
-    (name) =>
-      hasOwn(mediaType.parameters, name) &&
-      parameterValuesEqual(name, mediaRange.parameters[name], mediaType.parameters[name]),
-  );
+  let agreeing = 0;
+  let rangeOnly = 0;
+
+  for (const name of Object.keys(mediaRange.parameters)) {
+    if (!hasOwn(mediaType.parameters, name)) {
+      if (parameterMatching === 'required') return undefined;
+      rangeOnly += 1;
+    } else if (
+      !parameterValuesEqual(name, mediaRange.parameters[name], mediaType.parameters[name])
+    ) {
+      return undefined;
+    } else {
+      agreeing += 1;
+    }
+  }
+
+  return { level: level(mediaRange), agreeing, rangeOnly };
 };
+
+export const isMatch = (mediaRange, mediaType, parameterMatching = 'required') =>
+  match(mediaRange, mediaType, parameterMatching) !== undefined;
 
 /**
  * Media ranges can be overridden by more specific media ranges or specific media types.
  * https://www.rfc-editor.org/rfc/rfc9110#section-12.5.1
  */
-export const compareSpecificity = (mediaRange1, mediaRange2) => {
-  const level = ({ type, subtype }) => {
-    if (type === '*' && subtype === '*') return 0;
-    if (subtype === '*') return 1;
-    return 2;
-  };
+export const compareSpecificity = (mediaRange1, mediaRange2) =>
+  level(mediaRange1) - level(mediaRange2) ||
+  Object.keys(mediaRange1.parameters).length - Object.keys(mediaRange2.parameters).length;
 
-  return (
-    level(mediaRange1) - level(mediaRange2) ||
-    Object.keys(mediaRange1.parameters).length - Object.keys(mediaRange2.parameters).length
-  );
-};
+/**
+ * Precedence of matches: exact type and subtype, then subtype wildcard, then full wildcard;
+ * on equal level more agreeing parameters, then fewer parameters present only on the media range.
+ */
+const compareMatches = (match1, match2) =>
+  match1.level - match2.level ||
+  match1.agreeing - match2.agreeing ||
+  match2.rangeOnly - match1.rangeOnly;
 
 /**
  * Finds the most specific media range matching the media type.
  * Invalid (undefined) media ranges are skipped.
- * In case of equal specificity, the first media range wins.
+ * In case of equal precedence, the first media range wins.
  */
-export const findMostSpecific = (mediaRanges, mediaType) => {
+export const findMostSpecific = (mediaRanges, mediaType, parameterMatching = 'required') => {
   let best;
+  let bestMatch;
   let bestIndex = -1;
 
   mediaRanges.forEach((mediaRange, index) => {
-    if (mediaRange === undefined || !isMatch(mediaRange, mediaType)) return;
-    if (best === undefined || compareSpecificity(mediaRange, best) > 0) {
+    if (mediaRange === undefined) return;
+
+    const currentMatch = match(mediaRange, mediaType, parameterMatching);
+
+    if (currentMatch === undefined) return;
+    if (bestMatch === undefined || compareMatches(currentMatch, bestMatch) > 0) {
       best = mediaRange;
+      bestMatch = currentMatch;
       bestIndex = index;
     }
   });

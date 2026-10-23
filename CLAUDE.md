@@ -58,6 +58,10 @@ Matching functions never throw on invalid strings: invalid media types/ranges ne
 elements are skipped, and `Accept` without usable elements (or `undefined`/`null`) means no preference. Only wrong argument
 types throw `TypeError`; parsed values are shape-checked in `src/match/utils.js`.
 
+`matches` and `selectBestMatch` take a `parameters` option: `required` (default, RFC 9110 `Accept` semantics, range
+parameters are requirements) or `compatible` (OpenAPI `content` map lookup, only parameters present on both sides must
+agree). `quality` and `negotiate` always use `required`. Precedence is computed by `compareMatches` in `src/match/utils.js`.
+
 The `type` option of `parse`/`test` is validated and normalized in one place (`normalizeType` in `src/parse/rule.js`);
 `undefined` and `null` both mean "not specified".
 
