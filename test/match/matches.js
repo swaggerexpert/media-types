@@ -91,4 +91,39 @@ describe('matches', function () {
       TypeError,
     );
   });
+
+  specify('should ignore "q" parameter of the media range', function () {
+    assert.isTrue(matches('text/html;q=0.5', 'text/html'));
+    assert.isTrue(matches('text/html;Q=0.5;level=1', 'text/html;level=1'));
+    assert.isFalse(matches('text/html;q=0.5;level=1', 'text/html'));
+  });
+
+  specify(
+    'should throw TypeError for parsed media types with non-string parameter values',
+    function () {
+      assert.throws(
+        () =>
+          matches('*/*;charset=utf-8', {
+            type: 'text',
+            subtype: 'plain',
+            parameters: { charset: null },
+          }),
+        TypeError,
+      );
+      assert.throws(
+        () =>
+          matches('text/plain;level=1', {
+            type: 'text',
+            subtype: 'plain',
+            parameters: { level: 1 },
+          }),
+        TypeError,
+      );
+    },
+  );
+
+  specify('should throw TypeError for options of wrong type', function () {
+    assert.throws(() => matches('*/*', 'text/html', 'compatible'), TypeError);
+    assert.throws(() => matches('*/*', 'text/html', ['compatible']), TypeError);
+  });
 });

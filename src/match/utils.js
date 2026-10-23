@@ -1,13 +1,12 @@
 import parse from '../parse/index.js';
-
-const isPlainObject = (value) =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
+import { hasOwn, isPlainObject, normalizeOptions } from '../utils.js';
 
 const isMediaTypeAST = (value) =>
   isPlainObject(value) &&
   typeof value.type === 'string' &&
   typeof value.subtype === 'string' &&
-  isPlainObject(value.parameters);
+  isPlainObject(value.parameters) &&
+  Object.values(value.parameters).every((parameterValue) => typeof parameterValue === 'string');
 
 const isAcceptAST = (value) =>
   Array.isArray(value) &&
@@ -58,25 +57,53 @@ export const toList = (values, name) => {
 };
 
 /**
+ * Returns index of the double quote closing a quoted-string, or -1 when it is not terminated.
+ * https://www.rfc-editor.org/rfc/rfc9110#section-5.6.4
+ */
+const findQuotedStringEnd = (value, from) => {
+  for (let index = from; index < value.length; index += 1) {
+    if (value[index] === '\\') {
+      index += 1;
+    } else if (value[index] === '"') {
+      return index;
+    }
+  }
+
+  return -1;
+};
+
+/**
  * Splits a list field value on commas outside of quoted-strings.
+ * A quoted-string can only start a parameter value, i.e. right after "=".
+ * Unterminated quoted-string is not a quoted-string, so that commas after it still split elements.
+ * Runs in linear time.
  * https://www.rfc-editor.org/rfc/rfc9110#section-5.6.1
  */
 const splitList = (value) => {
   const elements = [];
   let start = 0;
-  let quoted = false;
+  let hasQuotedStringEnd = true;
+  let index = 0;
 
-  for (let index = 0; index < value.length; index += 1) {
+  while (index < value.length) {
     const char = value[index];
 
-    if (quoted && char === '\\') {
-      index += 1;
-    } else if (char === '"') {
-      quoted = !quoted;
-    } else if (char === ',' && !quoted) {
+    if (char === '"' && value[index - 1] === '=' && hasQuotedStringEnd) {
+      const end = findQuotedStringEnd(value, index + 1);
+
+      if (end !== -1) {
+        index = end + 1;
+        continue;
+      }
+
+      // no closing double quote follows, so no later quoted-string can be terminated either
+      hasQuotedStringEnd = false;
+    } else if (char === ',') {
       elements.push(value.slice(start, index));
       start = index + 1;
     }
+
+    index += 1;
   }
   elements.push(value.slice(start));
 
@@ -84,13 +111,26 @@ const splitList = (value) => {
 };
 
 /**
+ * Removes optional whitespace around the value, in linear time.
+ * https://www.rfc-editor.org/rfc/rfc9110#section-5.6.3
+ */
+const trimOWS = (value) => {
+  const isOWS = (char) => char === ' ' || char === '\t';
+  let start = 0;
+  let end = value.length;
+
+  while (start < end && isOWS(value[start])) start += 1;
+  while (end > start && isOWS(value[end - 1])) end -= 1;
+
+  return value.slice(start, end);
+};
+
+/**
  * Recovers valid elements from an invalid Accept field value; invalid elements are dropped.
  * https://www.rfc-editor.org/rfc/rfc9110#section-2.4
  */
 const recoverAccept = (accept) =>
-  splitList(accept).flatMap(
-    (element) => toAST(element.replace(/^[ \t]+|[ \t]+$/g, ''), 'accept') ?? [],
-  );
+  splitList(accept).flatMap((element) => toAST(trimOWS(element), 'accept') ?? []);
 
 /**
  * Returns usable media ranges of an Accept field value, or undefined when there is no preference.
@@ -119,8 +159,6 @@ const parameterValuesEqual = (name, value1, value2) => {
   return value1 === value2;
 };
 
-const hasOwn = (object, property) => Object.prototype.hasOwnProperty.call(object, property);
-
 const parameterMatchings = ['required', 'compatible'];
 
 /**
@@ -128,7 +166,7 @@ const parameterMatchings = ['required', 'compatible'];
  * Both undefined and null mean the default "required" parameter matching.
  */
 export const normalizeParameterMatching = (options) => {
-  const parameterMatching = options?.parameterMatching;
+  const { parameterMatching } = normalizeOptions(options);
 
   if (parameterMatching === undefined || parameterMatching === null) return 'required';
 
@@ -154,6 +192,9 @@ const level = ({ type, subtype }) => {
  *   with an equal value (https://www.rfc-editor.org/rfc/rfc9110#section-12.5.1)
  * - "compatible": parameters present on both sides must have an equal value,
  *   parameters present on one side only are ignored
+ *
+ * Parameter "q" of the media range is ignored, as it is always a weight
+ * and media type parameters named "q" are disallowed (https://www.rfc-editor.org/rfc/rfc9110#section-12.5.1).
  */
 const match = (mediaRange, mediaType, parameterMatching) => {
   const isFullWildcard = mediaRange.type === '*' && mediaRange.subtype === '*';
@@ -167,6 +208,8 @@ const match = (mediaRange, mediaType, parameterMatching) => {
   let rangeOnly = 0;
 
   for (const name of Object.keys(mediaRange.parameters)) {
+    if (name === 'q') continue;
+
     if (!hasOwn(mediaType.parameters, name)) {
       if (parameterMatching === 'required') return undefined;
       rangeOnly += 1;
@@ -188,16 +231,11 @@ export const isMatch = (mediaRange, mediaType, parameterMatching = 'required') =
 /**
  * Media ranges can be overridden by more specific media ranges or specific media types.
  * https://www.rfc-editor.org/rfc/rfc9110#section-12.5.1
- */
-export const compareSpecificity = (mediaRange1, mediaRange2) =>
-  level(mediaRange1) - level(mediaRange2) ||
-  Object.keys(mediaRange1.parameters).length - Object.keys(mediaRange2.parameters).length;
-
-/**
+ *
  * Precedence of matches: exact type and subtype, then subtype wildcard, then full wildcard;
  * on equal level more agreeing parameters, then fewer parameters present only on the media range.
  */
-const compareMatches = (match1, match2) =>
+export const compareMatches = (match1, match2) =>
   match1.level - match2.level ||
   match1.agreeing - match2.agreeing ||
   match2.rangeOnly - match1.rangeOnly;
@@ -225,5 +263,5 @@ export const findMostSpecific = (mediaRanges, mediaType, parameterMatching = 're
     }
   });
 
-  return { mediaRange: best, index: bestIndex };
+  return { mediaRange: best, index: bestIndex, match: bestMatch };
 };

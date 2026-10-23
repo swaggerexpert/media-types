@@ -94,4 +94,31 @@ describe('negotiate', function () {
     assert.throws(() => negotiate('*/*', undefined), TypeError);
     assert.throws(() => negotiate('*/*', 1), TypeError);
   });
+
+  context('given malformed Accept field value', function () {
+    specify('should treat double quote outside of parameter value as literal', function () {
+      assert.deepEqual(negotiate('foo"bar, application/json;q=0', ['application/json']), []);
+    });
+
+    specify('should treat unterminated quoted-string as literal', function () {
+      assert.deepEqual(negotiate('text/html;a="x, image/png;q=0', ['image/png']), []);
+      assert.deepEqual(negotiate('text/html;a="x, image/png;q=0.5', ['image/png']), ['image/png']);
+    });
+
+    specify('should process long whitespace runs in linear time', function () {
+      const accept = `a${' '.repeat(256 * 1024)}a, text/html`;
+      const start = Date.now();
+
+      assert.deepEqual(negotiate(accept, ['text/html']), ['text/html']);
+      assert.isBelow(Date.now() - start, 1000);
+    });
+
+    specify('should process many unterminated quoted-strings in linear time', function () {
+      const accept = `${'a="'.repeat(64 * 1024)}, text/html`;
+      const start = Date.now();
+
+      assert.deepEqual(negotiate(accept, ['text/html']), ['text/html']);
+      assert.isBelow(Date.now() - start, 1000);
+    });
+  });
 });

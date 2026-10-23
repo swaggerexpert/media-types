@@ -147,4 +147,15 @@ describe('selectBestMatch', function () {
       TypeError,
     );
   });
+
+  specify('should ignore "q" parameter of media ranges', function () {
+    assert.strictEqual(
+      selectBestMatch(['text/html;q=0.9', '*/*;q=0.1'], 'text/html'),
+      'text/html;q=0.9',
+    );
+  });
+
+  specify('should throw TypeError for options of wrong type', function () {
+    assert.throws(() => selectBestMatch(['*/*'], 'text/html', 'compatible'), TypeError);
+  });
 });

@@ -3,7 +3,7 @@ import {
   toAcceptMediaRanges,
   toMediaType,
   findMostSpecific,
-  compareSpecificity,
+  compareMatches,
 } from './utils.js';
 
 /**
@@ -22,17 +22,18 @@ const negotiate = (accept, mediaTypes) => {
 
   return candidates
     .map((candidate) => {
-      const { mediaRange, index: mediaRangeIndex } = findMostSpecific(
-        mediaRanges,
-        candidate.mediaType,
-      );
-      return { ...candidate, mediaRange, mediaRangeIndex };
+      const {
+        mediaRange,
+        index: mediaRangeIndex,
+        match,
+      } = findMostSpecific(mediaRanges, candidate.mediaType);
+      return { ...candidate, mediaRange, mediaRangeIndex, match };
     })
     .filter(({ mediaRange }) => mediaRange !== undefined && mediaRange.weight > 0)
     .sort(
       (a, b) =>
         b.mediaRange.weight - a.mediaRange.weight ||
-        compareSpecificity(b.mediaRange, a.mediaRange) ||
+        compareMatches(b.match, a.match) ||
         a.mediaRangeIndex - b.mediaRangeIndex ||
         a.index - b.index,
     )
