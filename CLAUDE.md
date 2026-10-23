@@ -82,3 +82,4 @@ The build produces three formats:
 
 TypeScript types are in `types/index.d.ts` (ESM). The build copies it to `types/index.d.cts` (generated, gitignored),
 which the `require` export condition points to, so that CommonJS consumers with `node16`/`nodenext` resolution get types.
+`npm run build` starts with `npm run clean`, which removes `es/`, `cjs/`, `dist/` and the generated typings.

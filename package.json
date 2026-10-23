@@ -31,7 +31,8 @@
   "scripts": {
     "prepublishOnly": "npm run build",
     "grammar:compile": "node ./scripts/apg-js.js --lite --in=./src/grammar.bnf --out=./src/grammar.js",
-    "build": "npm run grammar:compile && npm run build:es && npm run build:cjs && npm run build:cjs:apg-lite && npm run build:types && npm run build:umd:browser",
+    "clean": "node -e \"const fs = require('node:fs'); for (const path of ['es', 'cjs', 'dist', 'types/index.d.cts']) fs.rmSync(path, { recursive: true, force: true });\"",
+    "build": "npm run clean && npm run grammar:compile && npm run build:es && npm run build:cjs && npm run build:cjs:apg-lite && npm run build:types && npm run build:umd:browser",
     "build:es": "cross-env BABEL_ENV=es babel src --out-dir es --extensions '.js' --out-file-extension '.mjs'",
     "build:cjs": "cross-env BABEL_ENV=cjs babel src --out-dir cjs --extensions '.js' --out-file-extension '.cjs'",
     "build:cjs:apg-lite": "cross-env BABEL_ENV=cjs babel node_modules/apg-lite/lib/parser.js --out-file ./cjs/apg-lite.cjs",
