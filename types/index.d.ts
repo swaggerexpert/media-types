@@ -63,8 +63,6 @@ export interface CSTNode {
   readonly type:
     | 'Accept'
     | 'media-range'
-    | 'weight'
-    | 'qvalue'
     | 'media-type'
     | 'type'
     | 'subtype'
@@ -133,8 +131,7 @@ export interface Trace {
 /**
  * Testing
  */
-export function test(source: string, options?: TestOptions | null): boolean;
-export function test(source: unknown, options?: TestOptions | null): source is string;
+export function test(source: unknown, options?: TestOptions | null): boolean;
 
 export interface TestOptions {
   readonly type?: Type | null;
@@ -183,9 +180,8 @@ export function negotiate<T extends MediaTypeString | MediaType>(
 /**
  * Grammar
  */
-export function Grammar(): Grammar;
-
-export interface Grammar {
+export declare class Grammar {
+  constructor();
   grammarObject: string; // Internal identifier
   rules: Rule[]; // List of grammar rules
   udts: UDT[]; // User-defined terminals (empty in this grammar)
