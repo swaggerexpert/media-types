@@ -4,7 +4,7 @@ import { parse } from '../../src/index.js';
 
 describe('parse', function () {
   context('media-range', function () {
-    const parseRange = (source) => parse(source, { startRule: 'media-range' });
+    const parseRange = (source) => parse(source, { type: 'media-range' });
 
     context('*/*', function () {
       specify('should parse', function () {

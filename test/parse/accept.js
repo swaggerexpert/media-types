@@ -4,7 +4,7 @@ import { parse } from '../../src/index.js';
 
 describe('parse', function () {
   context('Accept', function () {
-    const parseAccept = (source) => parse(source, { startRule: 'Accept' });
+    const parseAccept = (source) => parse(source, { type: 'accept' });
 
     context('example from RFC 9110', function () {
       // https://www.rfc-editor.org/rfc/rfc9110#section-12.5.1

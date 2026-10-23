@@ -32,7 +32,7 @@ const serialize = ({ type, subtype, parameters }) => {
 };
 
 const parseAndSerialize = (input) => {
-  const parseResult = parse(input);
+  const parseResult = parse(input, { type: 'media-type' });
   return parseResult.result.success ? serialize(parseResult.tree) : null;
 };
 

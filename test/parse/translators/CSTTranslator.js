@@ -43,7 +43,7 @@ describe('parse', function () {
 
       specify('should translate an Accept field value to a CST', function () {
         const parseResult = parse('*/*;q=0', {
-          startRule: 'Accept',
+          type: 'accept',
           translator: new CSTTranslator(),
         });
 

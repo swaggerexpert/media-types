@@ -4,16 +4,16 @@ import parse from '../parse/index.js';
  * Turns a string into its AST, while already parsed values pass through.
  * Returns undefined for strings that are not valid according to the start rule.
  */
-const toAST = (value, startRule) => {
+const toAST = (value, type) => {
   if (typeof value === 'string') {
-    const parseResult = parse(value, { startRule });
+    const parseResult = parse(value, { type });
     return parseResult.result.success ? parseResult.tree : undefined;
   }
 
   if (typeof value === 'object' && value !== null) return value;
 
   throw new TypeError(
-    `Expected string or parsed ${startRule}, got ${value === null ? 'null' : typeof value}`,
+    `Expected string or parsed ${type}, got ${value === null ? 'null' : typeof value}`,
   );
 };
 
@@ -53,7 +53,7 @@ const splitList = (value) => {
  */
 const recoverAccept = (accept) =>
   splitList(accept).flatMap(
-    (element) => toAST(element.replace(/^[ \t]+|[ \t]+$/g, ''), 'Accept') ?? [],
+    (element) => toAST(element.replace(/^[ \t]+|[ \t]+$/g, ''), 'accept') ?? [],
   );
 
 /**
@@ -65,7 +65,7 @@ const recoverAccept = (accept) =>
 export const toAcceptMediaRanges = (accept) => {
   if (accept === undefined) return undefined;
 
-  const mediaRanges = (toAST(accept, 'Accept') ?? recoverAccept(accept)).filter(
+  const mediaRanges = (toAST(accept, 'accept') ?? recoverAccept(accept)).filter(
     ({ weight }) => !Number.isNaN(weight),
   );
 

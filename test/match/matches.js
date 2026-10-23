@@ -37,7 +37,7 @@ describe('matches', function () {
   });
 
   specify('should accept already parsed values', function () {
-    const mediaRange = parse('text/*', { startRule: 'media-range' }).tree;
+    const mediaRange = parse('text/*', { type: 'media-range' }).tree;
     const mediaType = parse('text/html').tree;
 
     assert.isTrue(matches(mediaRange, mediaType));

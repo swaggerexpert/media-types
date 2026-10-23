@@ -4,10 +4,12 @@ import { parse } from '../../src/index.js';
 
 describe('parse', function () {
   context('media-type', function () {
+    const parseMediaType = (source) => parse(source, { type: 'media-type' });
+
     context('given valid source string', function () {
       context('text/html', function () {
         specify('should parse', function () {
-          const parseResult = parse('text/html');
+          const parseResult = parseMediaType('text/html');
 
           assert.isTrue(parseResult.result.success);
           assert.deepEqual(parseResult.tree, { type: 'text', subtype: 'html', parameters: {} });
@@ -16,7 +18,7 @@ describe('parse', function () {
 
       context('text/html;charset=utf-8', function () {
         specify('should parse', function () {
-          const parseResult = parse('text/html;charset=utf-8');
+          const parseResult = parseMediaType('text/html;charset=utf-8');
 
           assert.isTrue(parseResult.result.success);
           assert.deepEqual(parseResult.tree, {
@@ -36,7 +38,7 @@ describe('parse', function () {
           'text/html;charset=UTF-8',
         ].forEach((source) => {
           specify(`should parse ${source}`, function () {
-            const parseResult = parse(source);
+            const parseResult = parseMediaType(source);
 
             assert.isTrue(parseResult.result.success);
             assert.strictEqual(parseResult.tree.type, 'text');
@@ -48,7 +50,7 @@ describe('parse', function () {
 
       context('application/vnd.api+json', function () {
         specify('should parse structured syntax suffix', function () {
-          const parseResult = parse('application/vnd.api+json');
+          const parseResult = parseMediaType('application/vnd.api+json');
 
           assert.isTrue(parseResult.result.success);
           assert.deepEqual(parseResult.tree, {
@@ -62,7 +64,7 @@ describe('parse', function () {
 
       context('application/vnd.foo+cbor+json', function () {
         specify('should use the part after the last "+" as suffix', function () {
-          const parseResult = parse('application/vnd.foo+cbor+json');
+          const parseResult = parseMediaType('application/vnd.foo+cbor+json');
 
           assert.isTrue(parseResult.result.success);
           assert.strictEqual(parseResult.tree.suffix, 'json');
@@ -71,14 +73,14 @@ describe('parse', function () {
 
       context('application/+json and application/json+', function () {
         specify('should not produce suffix', function () {
-          assert.notProperty(parse('application/+json').tree, 'suffix');
-          assert.notProperty(parse('application/json+').tree, 'suffix');
+          assert.notProperty(parseMediaType('application/+json').tree, 'suffix');
+          assert.notProperty(parseMediaType('application/json+').tree, 'suffix');
         });
       });
 
       context('TEXT/HTML;CHARSET=UTF-8', function () {
         specify('should lower case type, subtype and parameter names, but not values', function () {
-          const parseResult = parse('TEXT/HTML;CHARSET=UTF-8');
+          const parseResult = parseMediaType('TEXT/HTML;CHARSET=UTF-8');
 
           assert.isTrue(parseResult.result.success);
           assert.deepEqual(parseResult.tree, {
@@ -91,7 +93,7 @@ describe('parse', function () {
 
       context('text/plain; a=1 ;b=2\t;\tc=3', function () {
         specify('should allow optional whitespace around ";"', function () {
-          const parseResult = parse('text/plain; a=1 ;b=2\t;\tc=3');
+          const parseResult = parseMediaType('text/plain; a=1 ;b=2\t;\tc=3');
 
           assert.isTrue(parseResult.result.success);
           assert.deepEqual(parseResult.tree.parameters, { a: '1', b: '2', c: '3' });
@@ -100,7 +102,7 @@ describe('parse', function () {
 
       context('text/plain;;a=1;', function () {
         specify('should allow empty parameters', function () {
-          const parseResult = parse('text/plain;;a=1;');
+          const parseResult = parseMediaType('text/plain;;a=1;');
 
           assert.isTrue(parseResult.result.success);
           assert.deepEqual(parseResult.tree.parameters, { a: '1' });
@@ -110,15 +112,17 @@ describe('parse', function () {
       context('text/html; and text/html; ', function () {
         specify('should allow trailing ";" as parameters are optional', function () {
           // https://www.rfc-editor.org/rfc/rfc9110#section-5.6.6
-          assert.isTrue(parse('text/html;').result.success);
-          assert.isTrue(parse('text/html; ').result.success);
-          assert.deepEqual(parse('text/html; ').tree.parameters, {});
+          assert.isTrue(parseMediaType('text/html;').result.success);
+          assert.isTrue(parseMediaType('text/html; ').result.success);
+          assert.deepEqual(parseMediaType('text/html; ').tree.parameters, {});
         });
       });
 
       context('quoted-string parameter value', function () {
         specify('should unquote and resolve quoted-pairs', function () {
-          const parseResult = parse('text/plain;title="a \\"quoted\\" \\\\ value; with=chars"');
+          const parseResult = parseMediaType(
+            'text/plain;title="a \\"quoted\\" \\\\ value; with=chars"',
+          );
 
           assert.isTrue(parseResult.result.success);
           assert.deepEqual(parseResult.tree.parameters, {
@@ -127,14 +131,14 @@ describe('parse', function () {
         });
 
         specify('should allow empty quoted-string', function () {
-          const parseResult = parse('text/plain;a=""');
+          const parseResult = parseMediaType('text/plain;a=""');
 
           assert.isTrue(parseResult.result.success);
           assert.deepEqual(parseResult.tree.parameters, { a: '' });
         });
 
         specify('should allow obs-text', function () {
-          const parseResult = parse('text/plain;a="café"');
+          const parseResult = parseMediaType('text/plain;a="café"');
 
           assert.isTrue(parseResult.result.success);
           assert.deepEqual(parseResult.tree.parameters, { a: 'café' });
@@ -143,7 +147,7 @@ describe('parse', function () {
 
       context('duplicate parameters', function () {
         specify('should keep the first occurrence', function () {
-          const parseResult = parse('text/html;charset=a;CHARSET=b');
+          const parseResult = parseMediaType('text/html;charset=a;CHARSET=b');
 
           assert.isTrue(parseResult.result.success);
           assert.deepEqual(parseResult.tree.parameters, { charset: 'a' });
@@ -152,7 +156,7 @@ describe('parse', function () {
 
       context('__proto__ parameter', function () {
         specify('should be an own property and not pollute the prototype', function () {
-          const parseResult = parse('text/html;__proto__=x;constructor=y');
+          const parseResult = parseMediaType('text/html;__proto__=x;constructor=y');
 
           assert.isTrue(parseResult.result.success);
           assert.isTrue(
@@ -166,7 +170,7 @@ describe('parse', function () {
 
       context('*/*', function () {
         specify('should parse as "*" is a tchar', function () {
-          const parseResult = parse('*/*');
+          const parseResult = parseMediaType('*/*');
 
           assert.isTrue(parseResult.result.success);
           assert.deepEqual(parseResult.tree, { type: '*', subtype: '*', parameters: {} });
@@ -200,7 +204,7 @@ describe('parse', function () {
         'téxt/html',
       ].forEach((source) => {
         specify(`should fail parsing ${JSON.stringify(source)}`, function () {
-          const parseResult = parse(source);
+          const parseResult = parseMediaType(source);
 
           assert.isFalse(parseResult.result.success);
           assert.isUndefined(parseResult.tree);
@@ -210,10 +214,10 @@ describe('parse', function () {
 
     context('given non-string input', function () {
       specify('should throw error', function () {
-        assert.throws(() => parse([]), TypeError);
-        assert.throws(() => parse(1), TypeError);
-        assert.throws(() => parse(null), TypeError);
-        assert.throws(() => parse(undefined), TypeError);
+        assert.throws(() => parseMediaType([]), TypeError);
+        assert.throws(() => parseMediaType(1), TypeError);
+        assert.throws(() => parseMediaType(null), TypeError);
+        assert.throws(() => parseMediaType(undefined), TypeError);
       });
     });
   });

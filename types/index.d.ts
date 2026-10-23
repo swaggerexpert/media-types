@@ -4,36 +4,47 @@ export type AcceptString = string;
 
 /**
  * Parsing
+ *
+ * Without `type` option, the type of the source is determined by `identify`;
+ * unidentifiable source is parsed as media type.
  */
-export function parse(
-  source: MediaTypeString,
-  options?: ParseOptions<'media-type'>,
-): ParseResult<MediaType>;
-export function parse(
-  source: MediaRangeString,
-  options: ParseOptions<'media-range'>,
-): ParseResult<MediaRange>;
-export function parse(source: AcceptString, options: ParseOptions<'Accept'>): ParseResult<Accept>;
 export function parse<TTree>(
   source: string,
-  options: ParseOptions<StartRule, Translator<TTree>>,
+  options: ParseOptions & { readonly translator: Translator<TTree> },
 ): ParseResult<TTree>;
 export function parse(
   source: string,
-  options: ParseOptions<StartRule, null>,
+  options: ParseOptions & { readonly translator: null },
 ): ParseResult<undefined>;
+export function parse(
+  source: MediaTypeString,
+  options: ParseOptions & { readonly type: 'media-type' },
+): ParseResult<MediaType>;
+export function parse(
+  source: MediaRangeString,
+  options: ParseOptions & { readonly type: 'media-range' },
+): ParseResult<MediaRange>;
+export function parse(
+  source: AcceptString,
+  options: ParseOptions & { readonly type: 'accept' },
+): ParseResult<Accept>;
+export function parse(source: string, options?: ParseOptions): ParseResult<ASTTree>;
 
-export type StartRule = 'media-type' | 'media-range' | 'Accept';
+export type Type = 'media-type' | 'media-range' | 'accept';
 
-export interface ParseOptions<
-  TStartRule extends StartRule = 'media-type',
-  TTranslator = ASTTranslator,
-> {
-  readonly startRule?: TStartRule;
-  readonly translator?: TTranslator | null;
+export interface ParseOptions {
+  readonly type?: Type;
+  readonly translator?: Translator | null;
   readonly stats?: boolean;
   readonly trace?: boolean;
 }
+
+/**
+ * Identification
+ *
+ * Identifies the narrowest type the source is valid as, or undefined.
+ */
+export function identify(source: unknown): Type | undefined;
 
 export interface Translator<TTree = unknown> {
   getTree(): TTree;
@@ -188,7 +199,7 @@ export declare class MediaTypeError extends Error {
 }
 export declare class MediaTypeParseError extends MediaTypeError {
   readonly source?: string;
-  readonly startRule?: StartRule;
+  readonly type?: Type;
 }
 
 export interface MediaTypeErrorOptions {

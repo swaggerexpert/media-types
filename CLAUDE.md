@@ -32,11 +32,13 @@ Do not change the grammar beyond what the ordered choice of apg-lite requires; e
 must preserve the accepted language and be marked with a `MODIFICATION:` comment.
 Semantic rules the RFC states in prose (e.g. "q" parameter is the weight) live in the translators, not in the grammar.
 
-Start rules: `media-type` (default), `media-range`, `Accept`.
+Grammar start rules: `media-type`, `media-range`, `Accept`. They are not public API: `parse` takes a `type` option
+(`media-type`, `media-range`, `accept`) mapped to start rules in `src/parse/rule.js`. Without `type`, `parse` uses
+`identify` (`src/identify.js`) to pick the narrowest type the source is valid as, falling back to `media-type`.
 
 ### Core Pipeline
 
-1. **Parsing** (`src/parse/`) - apg-lite parser with pluggable translators (AST, CST, XML)
+1. **Parsing** (`src/parse/`) - apg-lite parser with pluggable translators (AST, CST, XML); `identify` picks the type
 2. **Validation** (`src/test/`) - `testMediaType`, `testMediaRange`, `testAccept`; `qvalue.js` is internal
 3. **Matching** (`src/match/`) - `matches`, `selectBestMatch`, `quality`, `negotiate`; shared logic in `utils.js`
 

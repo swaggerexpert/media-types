@@ -41,6 +41,7 @@ and **parameters**. Matching follows the precedence rules of [RFC 9110, Section 
         - [XML](#xml-translator)
       - [Statistics](#statistics)
       - [Tracing](#tracing)
+    - [Identification](#identification)
     - [Validation](#validation)
     - [Matching](#matching)
       - [matches](#matches)
@@ -95,7 +96,7 @@ Local variable `MediaTypes` will be available in scope of the `<script>` tag mat
 
 ### Usage
 
-`@swaggerexpert/media-types` currently supports **parsing**, **validation** and **matching**.
+`@swaggerexpert/media-types` currently supports **parsing**, **identification**, **validation** and **matching**.
 Both parser and validator are based on [ABNF](https://www.rfc-editor.org/rfc/rfc5234) grammar taken from RFC 9110
 and use [apg-lite](https://github.com/ldthomas/apg-lite) parser generator.
 
@@ -120,7 +121,21 @@ const parseResult = parse('text/html;charset=utf-8');
 }
 ```
 
-The `startRule` option selects what is being parsed: `media-type` (default), `media-range` or `Accept`.
+Media types, media ranges and `Accept` field values share the same syntax (every media type is a valid media range,
+every media range is a valid `Accept` field value). Without the `type` option, `parse` determines the type of the source
+using [identify](#identification); source that cannot be identified is parsed as media type.
+The `type` option (`media-type`, `media-range` or `accept`) forces the type. Force the type whenever it is known upfront,
+e.g. always parse `Accept` header field values with `{ type: 'accept' }`, so that the shape of the result does not depend
+on the value (`text/html` would otherwise be identified as media type).
+
+```js
+import { parse } from '@swaggerexpert/media-types';
+
+parse('text/html'); // parsed as media type
+parse('text/*'); // parsed as media range
+parse('text/html, */*;q=0.1'); // parsed as Accept field value
+parse('text/html', { type: 'accept' }); // forced to be parsed as Accept field value
+```
 
 [TypeScript typings](https://github.com/swaggerexpert/media-types/blob/main/types/index.d.ts) are available for all fields attached to parse result object returned by the `parse` function.
 
@@ -155,7 +170,7 @@ Media range has the same AST shape as media type.
 ```js
 import { parse } from '@swaggerexpert/media-types';
 
-parse('text/*;level=1', { startRule: 'media-range' }).tree;
+parse('text/*;level=1', { type: 'media-range' }).tree;
 // => { type: 'text', subtype: '*', parameters: { level: '1' } }
 ```
 
@@ -167,7 +182,7 @@ Every media range carries its `weight` ([RFC 9110, Section 12.4.2](https://www.r
 ```js
 import { parse } from '@swaggerexpert/media-types';
 
-parse('text/html;level=1;q=0.5, application/json, */*;q=0.1', { startRule: 'Accept' }).tree;
+parse('text/html;level=1;q=0.5, application/json, */*;q=0.1', { type: 'accept' }).tree;
 // =>
 // [
 //   { type: 'text', subtype: 'html', parameters: { level: '1' }, weight: 0.5 },
@@ -252,6 +267,32 @@ trace.inferExpectations(); // returns parser expectations
 By combining information from `result` and `trace`, it is possible to analyze the parsing process in detail
 and generate messages like this: `'Invalid media type: "text/". Syntax error at position 5, expected "!", "#", "$", ...'`. Please see this
 [test file](https://github.com/swaggerexpert/media-types/blob/main/test/parse/trace.js) for more information how to achieve that.
+
+#### Identification
+
+`identify` determines the narrowest type the source is valid as. Its return value can be passed as the `type` option of `parse`.
+
+```js
+import { identify } from '@swaggerexpert/media-types';
+
+identify('text/html; charset=utf-8'); // => 'media-type'
+identify('text/*'); // => 'media-range'
+identify('*/*'); // => 'media-range'
+identify('text/html, */*;q=0.1'); // => 'accept'
+identify('text/html;q=0.5'); // => 'accept'
+identify('garbage'); // => undefined
+identify(''); // => undefined
+```
+
+Rules:
+
+- Single media type with `*` subtype (`*/*`, `type/*`) is a media range. `*/html` or `text/*+json` are media types,
+  as `*` is a wildcard only as the whole subtype ([RFC 9110, Section 12.5.1](https://www.rfc-editor.org/rfc/rfc9110#section-12.5.1)).
+- Single media type with `q` parameter is an `Accept` field value: `q` is always a weight, and media type parameters
+  named `q` are disallowed ([RFC 9110, Section 12.5.1](https://www.rfc-editor.org/rfc/rfc9110#section-12.5.1)).
+- Any other single media type is a media type.
+- List of media ranges is an `Accept` field value.
+- Empty list (e.g. `''` or `', ,'`) and invalid source are not identified.
 
 #### Validation
 
@@ -378,7 +419,7 @@ import { MediaTypeError, MediaTypeParseError } from '@swaggerexpert/media-types'
 ```
 
 **MediaTypeError** is the base class for all errors. **MediaTypeParseError** is thrown by the `parse` function
-when the parser fails unexpectedly (e.g. unknown `startRule`); it carries the `source` string, the `startRule`
+when the parser fails unexpectedly; it carries the `source` string, the resolved `type`
 and the original error as `cause`. Syntax errors in parsed input are not errors; they are reported via `result.success`.
 
 #### Grammar
