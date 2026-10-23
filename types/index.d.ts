@@ -133,9 +133,11 @@ export interface Trace {
 /**
  * Testing
  */
-export function testMediaType(source: unknown): source is MediaTypeString;
-export function testMediaRange(source: unknown): source is MediaRangeString;
-export function testAccept(source: unknown): source is AcceptString;
+export function test(source: unknown, options?: TestOptions): source is string;
+
+export interface TestOptions {
+  readonly type?: Type;
+}
 
 /**
  * Matching

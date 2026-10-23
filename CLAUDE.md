@@ -39,7 +39,7 @@ Grammar start rules: `media-type`, `media-range`, `Accept`. They are not public 
 ### Core Pipeline
 
 1. **Parsing** (`src/parse/`) - apg-lite parser with pluggable translators (AST, CST, XML); `identify` picks the type
-2. **Validation** (`src/test/`) - `testMediaType`, `testMediaRange`, `testAccept`; `qvalue.js` is internal
+2. **Validation** (`src/test/`) - `test(source, { type })`, equivalent to `parse(...).result.success`; `qvalue.js` is internal
 3. **Matching** (`src/match/`) - `matches`, `selectBestMatch`, `quality`, `negotiate`; shared logic in `utils.js`
 
 ### Parse Translators

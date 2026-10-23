@@ -296,15 +296,20 @@ Rules:
 
 #### Validation
 
-Validating is as simple as importing one of the validation functions and calling it.
+Validating is as simple as importing the **test** function and calling it.
+`test` accepts the same `type` option as [parse](#parsing) and returns `true` exactly when parsing succeeds.
+Without the `type` option, the source is valid when it can be [identified](#identification) as any type.
 
 ```js
-import { testMediaType, testMediaRange, testAccept } from '@swaggerexpert/media-types';
+import { test } from '@swaggerexpert/media-types';
 
-testMediaType('text/html; charset=utf-8'); // => true
-testMediaType('text/html; charset =utf-8'); // => false (no whitespace allowed around "=")
-testMediaRange('text/*'); // => true
-testAccept('text/html, */*;q=0.8'); // => true
+test('text/html; charset=utf-8'); // => true
+test('text/html; charset =utf-8'); // => false (no whitespace allowed around "=")
+test('text/html, */*', { type: 'media-type' }); // => false
+test('text/*', { type: 'media-range' }); // => true
+test('text/html, */*;q=0.8', { type: 'accept' }); // => true
+test('', { type: 'accept' }); // => true (empty list)
+test(''); // => false (cannot be identified)
 ```
 
 Validation is strict: whitespace around the whole value is not trimmed, as it is removed when the field value is parsed
@@ -408,7 +413,7 @@ negotiate('text/html;level, application/json;q=0.5', ['text/html', 'application/
 negotiate('garbage', ['text/html', 'application/json']); // => ['text/html', 'application/json']
 ```
 
-To reject invalid input instead, validate it upfront using [validation](#validation) functions.
+To reject invalid input instead, validate it upfront using the [test](#validation) function.
 
 #### Errors
 
