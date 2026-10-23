@@ -82,7 +82,7 @@ export type MediaRange = MediaType;
 
 export interface AcceptElement extends MediaRange {
   /**
-   * Weight is NaN when the "q" parameter value is not a valid qvalue.
+   * Weight is NaN when the "q" parameter value is not a valid qvalue; matching functions ignore such element.
    */
   readonly weight: number;
 }
@@ -128,6 +128,10 @@ export function testAccept(source: unknown): source is AcceptString;
 
 /**
  * Matching
+ *
+ * Matching functions never throw on invalid strings: invalid media types and media ranges never match,
+ * invalid Accept elements are ignored, and Accept without usable elements means no preference.
+ * Arguments that are neither strings nor parsed ASTs throw TypeError.
  */
 export function matches(
   mediaRange: MediaRangeString | MediaRange,

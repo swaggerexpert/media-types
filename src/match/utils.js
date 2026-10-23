@@ -1,28 +1,75 @@
 import parse from '../parse/index.js';
-import MediaTypeParseError from '../errors/MediaTypeParseError.js';
-
-const labels = {
-  'media-type': 'media type',
-  'media-range': 'media range',
-  Accept: 'Accept field value',
-};
 
 /**
  * Turns a string into its AST, while already parsed values pass through.
+ * Returns undefined for strings that are not valid according to the start rule.
  */
-export const toAST = (value, startRule) => {
-  if (typeof value !== 'string') return value;
-
-  const parseResult = parse(value, { startRule });
-
-  if (!parseResult.result.success) {
-    throw new MediaTypeParseError(`Invalid ${labels[startRule]}: "${value}"`, {
-      source: value,
-      startRule,
-    });
+const toAST = (value, startRule) => {
+  if (typeof value === 'string') {
+    const parseResult = parse(value, { startRule });
+    return parseResult.result.success ? parseResult.tree : undefined;
   }
 
-  return parseResult.tree;
+  if (typeof value === 'object' && value !== null) return value;
+
+  throw new TypeError(
+    `Expected string or parsed ${startRule}, got ${value === null ? 'null' : typeof value}`,
+  );
+};
+
+export const toMediaType = (value) => toAST(value, 'media-type');
+
+export const toMediaRange = (value) => toAST(value, 'media-range');
+
+/**
+ * Splits a list field value on commas outside of quoted-strings.
+ * https://www.rfc-editor.org/rfc/rfc9110#section-5.6.1
+ */
+const splitList = (value) => {
+  const elements = [];
+  let start = 0;
+  let quoted = false;
+
+  for (let index = 0; index < value.length; index += 1) {
+    const char = value[index];
+
+    if (quoted && char === '\\') {
+      index += 1;
+    } else if (char === '"') {
+      quoted = !quoted;
+    } else if (char === ',' && !quoted) {
+      elements.push(value.slice(start, index));
+      start = index + 1;
+    }
+  }
+  elements.push(value.slice(start));
+
+  return elements;
+};
+
+/**
+ * Recovers valid elements from an invalid Accept field value; invalid elements are dropped.
+ * https://www.rfc-editor.org/rfc/rfc9110#section-2.4
+ */
+const recoverAccept = (accept) =>
+  splitList(accept).flatMap(
+    (element) => toAST(element.replace(/^[ \t]+|[ \t]+$/g, ''), 'Accept') ?? [],
+  );
+
+/**
+ * Returns usable media ranges of an Accept field value, or undefined when there is no preference.
+ * Elements with invalid qvalue are not usable. Accept field value without any usable element
+ * is treated the same as a missing Accept field.
+ * https://www.rfc-editor.org/rfc/rfc9110#section-12.4.1
+ */
+export const toAcceptMediaRanges = (accept) => {
+  if (accept === undefined) return undefined;
+
+  const mediaRanges = (toAST(accept, 'Accept') ?? recoverAccept(accept)).filter(
+    ({ weight }) => !Number.isNaN(weight),
+  );
+
+  return mediaRanges.length > 0 ? mediaRanges : undefined;
 };
 
 /**
@@ -74,6 +121,7 @@ export const compareSpecificity = (mediaRange1, mediaRange2) => {
 
 /**
  * Finds the most specific media range matching the media type.
+ * Invalid (undefined) media ranges are skipped.
  * In case of equal specificity, the first media range wins.
  */
 export const findMostSpecific = (mediaRanges, mediaType) => {
@@ -81,7 +129,7 @@ export const findMostSpecific = (mediaRanges, mediaType) => {
   let bestIndex = -1;
 
   mediaRanges.forEach((mediaRange, index) => {
-    if (!isMatch(mediaRange, mediaType)) return;
+    if (mediaRange === undefined || !isMatch(mediaRange, mediaType)) return;
     if (best === undefined || compareSpecificity(mediaRange, best) > 0) {
       best = mediaRange;
       bestIndex = index;

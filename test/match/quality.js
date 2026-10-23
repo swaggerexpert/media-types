@@ -33,10 +33,26 @@ describe('quality', function () {
 
   specify('should return 0 when nothing matches', function () {
     assert.strictEqual(quality('text/*', 'image/png'), 0);
-    assert.strictEqual(quality('', 'image/png'), 0);
+    assert.strictEqual(quality('text/*;q=0', 'text/plain'), 0);
   });
 
-  specify('should return 0 for invalid qvalue', function () {
-    assert.strictEqual(quality('text/html;q=2', 'text/html'), 0);
+  specify('should return 0 for invalid media type', function () {
+    assert.strictEqual(quality('*/*', 'garbage'), 0);
+    assert.strictEqual(quality(undefined, 'garbage'), 0);
+  });
+
+  specify('should ignore invalid Accept elements', function () {
+    assert.strictEqual(quality('text/html;level, image/*;q=0.5', 'image/png'), 0.5);
+    assert.strictEqual(quality('text/html;level, image/*;q=0.5', 'text/html'), 0);
+  });
+
+  specify('should ignore Accept elements with invalid qvalue', function () {
+    assert.strictEqual(quality('text/html;q=2, */*;q=0.1', 'text/html'), 0.1);
+  });
+
+  specify('should treat Accept without usable elements as no preference', function () {
+    assert.strictEqual(quality('garbage', 'image/png'), 1);
+    assert.strictEqual(quality('', 'image/png'), 1);
+    assert.strictEqual(quality('text/html;q=abc', 'image/png'), 1);
   });
 });

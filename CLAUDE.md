@@ -50,7 +50,10 @@ Located in `src/parse/translators/`:
 ### Error Hierarchy
 
 All errors extend `MediaTypeError`:
-- `MediaTypeParseError` - Invalid input passed to matching functions, or unexpected parser failure
+- `MediaTypeParseError` - Unexpected parser failure (e.g. unknown start rule)
+
+Matching functions never throw on invalid strings: invalid media types/ranges never match, invalid `Accept`
+elements are skipped, and `Accept` without usable elements means no preference. Only wrong argument types throw `TypeError`.
 
 ### Compliance Tests
 
@@ -58,7 +61,7 @@ All errors extend `MediaTypeError`:
 - `fixtures/wpt/` - web-platform-tests MIME type parsing tests (WHATWG algorithm, used as an oracle)
 - `fixtures/negotiator/` - negotiator media type negotiation tests, extracted as data
 
-Known deviations (inputs other implementations recover from, but RFC 9110 rejects) are listed explicitly in the test files.
+Known WPT deviations (inputs the WHATWG algorithm recovers from, but RFC 9110 rejects) are listed explicitly in `wpt.js`.
 
 ### Module Formats
 

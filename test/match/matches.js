@@ -1,6 +1,6 @@
 import { assert } from 'chai';
 
-import { matches, parse, MediaTypeParseError } from '../../src/index.js';
+import { matches, parse } from '../../src/index.js';
 
 describe('matches', function () {
   specify('should match by */*', function () {
@@ -43,16 +43,15 @@ describe('matches', function () {
     assert.isTrue(matches(mediaRange, mediaType));
   });
 
-  specify('should throw on invalid input', function () {
-    assert.throws(
-      () => matches('text', 'text/html'),
-      MediaTypeParseError,
-      'Invalid media range: "text"',
-    );
-    assert.throws(
-      () => matches('text/*', 'text/*,'),
-      MediaTypeParseError,
-      'Invalid media type: "text/*,"',
-    );
+  specify('should not match invalid input', function () {
+    assert.isFalse(matches('text', 'text/html'));
+    assert.isFalse(matches('text/*', 'text/*,'));
+    assert.isFalse(matches('*/*', 'garbage'));
+  });
+
+  specify('should throw TypeError on input of wrong type', function () {
+    assert.throws(() => matches(1, 'text/html'), TypeError);
+    assert.throws(() => matches('*/*', null), TypeError);
+    assert.throws(() => matches(undefined, 'text/html'), TypeError);
   });
 });

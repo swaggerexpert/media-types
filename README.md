@@ -1,13 +1,30 @@
 # @swaggerexpert/media-types
 
+[![npmversion](https://img.shields.io/npm/v/%40swaggerexpert%2Fmedia-types?style=flat-square&label=npm%20package&color=%234DC81F&link=https%3A%2F%2Fwww.npmjs.com%2Fpackage%2F%40swaggerexpert%2Fmedia-types)](https://www.npmjs.com/package/@swaggerexpert/media-types)
+[![npm](https://img.shields.io/npm/dm/@swaggerexpert/media-types)](https://www.npmjs.com/package/@swaggerexpert/media-types)
 [![Test workflow](https://github.com/swaggerexpert/media-types/actions/workflows/test.yml/badge.svg)](https://github.com/swaggerexpert/media-types/actions)
 [![Dependabot enabled](https://img.shields.io/badge/Dependabot-enabled-blue.svg)](https://dependabot.com/)
+[![](https://data.jsdelivr.com/v1/package/npm/@swaggerexpert/media-types/badge)](https://www.jsdelivr.com/package/npm/@swaggerexpert/media-types)
+[![Tidelift](https://tidelift.com/badges/package/npm/@swaggerexpert%2Fmedia-types)](https://tidelift.com/subscription/pkg/npm-.swaggerexpert-media-types?utm_source=npm-swaggerexpert-media-types&utm_medium=referral&utm_campaign=readme)
 
 `@swaggerexpert/media-types` is a **parser**, **validator** and **matcher** for media types, media ranges
 and `Accept` field values as defined in [RFC 9110](https://www.rfc-editor.org/rfc/rfc9110) (HTTP Semantics).
 
 A single parse yields **type**, **subtype**, **structured syntax suffix** ([RFC 6838](https://www.rfc-editor.org/rfc/rfc6838#section-4.2.8))
 and **parameters**. Matching follows the precedence rules of [RFC 9110, Section 12.5.1](https://www.rfc-editor.org/rfc/rfc9110#section-12.5.1).
+
+<table>
+  <tr>
+    <td align="right" valign="middle">
+        <img src="https://raw.githubusercontent.com/swaggerexpert/media-types/main/assets/tidelift.webp" alt="Tidelift" width="60" />
+      </td>
+      <td valign="middle">
+        <a href="https://tidelift.com/subscription/pkg/npm-.swaggerexpert-media-types?utm_source=npm-swaggerexpert-media-types&utm_medium=referral&utm_campaign=readme">
+            Get professionally supported @swaggerexpert/media-types with Tidelift Subscription.
+        </a>
+      </td>
+  </tr>
+</table>
 
 ## Table of Contents
 
@@ -30,6 +47,7 @@ and **parameters**. Matching follows the precedence rules of [RFC 9110, Section 
       - [selectBestMatch](#selectbestmatch)
       - [quality](#quality)
       - [negotiate](#negotiate)
+      - [Invalid input](#invalid-input)
     - [Errors](#errors)
     - [Grammar](#grammar)
 - [Compliance](#compliance)
@@ -159,7 +177,7 @@ parse('text/html;level=1;q=0.5, application/json, */*;q=0.1', { startRule: 'Acce
 ```
 
 As RFC 9110 requires, any parameter named `q` is processed as weight, regardless of parameter ordering.
-A `q` value that is not a valid `qvalue` (e.g. `q=2`) results in `NaN` weight; such media range is never acceptable.
+A `q` value that is not a valid `qvalue` (e.g. `q=2`) results in `NaN` weight; matching functions ignore such element.
 Empty list elements (`text/html, , */*`) are allowed as required from recipients by [RFC 9110, Section 5.6.1.2](https://www.rfc-editor.org/rfc/rfc9110#section-5.6.1.2).
 
 ##### Translators
@@ -253,8 +271,8 @@ from an HTTP message ([RFC 9110, Section 5.5](https://www.rfc-editor.org/rfc/rfc
 
 #### Matching
 
-All matching functions accept either strings or already parsed ASTs. Strings are parsed using the strict grammar;
-invalid input throws `MediaTypeParseError`.
+All matching functions accept either strings or already parsed ASTs. Strings are parsed using the strict grammar.
+Matching functions never throw on invalid input; see [Invalid input](#invalid-input).
 
 Matching rules ([RFC 9110, Section 12.5.1](https://www.rfc-editor.org/rfc/rfc9110#section-12.5.1)):
 
@@ -326,6 +344,31 @@ negotiate('application/json;q=0, */*', ['application/json', 'text/html']); // =>
 negotiate(undefined, ['application/json', 'text/html']); // => ['application/json', 'text/html']
 ```
 
+##### Invalid input
+
+Media types, media ranges and `Accept` field values usually come from untrusted sources
+(HTTP requests, user authored OpenAPI documents). Matching functions therefore never throw on invalid strings
+and treat them as follows:
+
+- Invalid media range never matches and invalid media type is never matched (`matches` returns `false`,
+  `selectBestMatch` skips invalid media ranges, `quality` returns `0`, `negotiate` omits invalid media types).
+- From an invalid `Accept` field value, valid elements are recovered and invalid ones are ignored
+  ([RFC 9110, Section 2.4](https://www.rfc-editor.org/rfc/rfc9110#section-2.4)). Elements with invalid `qvalue` are ignored as well.
+- `Accept` field value without any usable element is treated as missing `Accept` field, i.e. any media type
+  is acceptable ([RFC 9110, Section 12.4.1](https://www.rfc-editor.org/rfc/rfc9110#section-12.4.1)).
+- Arguments that are neither strings nor parsed ASTs throw `TypeError`.
+
+```js
+import { matches, selectBestMatch, negotiate } from '@swaggerexpert/media-types';
+
+matches('text', 'text/html'); // => false
+selectBestMatch(['application/json; charset', 'application/*'], 'application/json'); // => 'application/*'
+negotiate('text/html;level, application/json;q=0.5', ['text/html', 'application/json']); // => ['application/json']
+negotiate('garbage', ['text/html', 'application/json']); // => ['text/html', 'application/json']
+```
+
+To reject invalid input instead, validate it upfront using [validation](#validation) functions.
+
 #### Errors
 
 `@swaggerexpert/media-types` provides a structured error class hierarchy.
@@ -334,20 +377,9 @@ negotiate(undefined, ['application/json', 'text/html']); // => ['application/jso
 import { MediaTypeError, MediaTypeParseError } from '@swaggerexpert/media-types';
 ```
 
-**MediaTypeError** is the base class for all errors. **MediaTypeParseError** is thrown when matching functions
-receive invalid input; it carries the `source` string and the `startRule` it failed to parse with.
-
-```js
-import { matches } from '@swaggerexpert/media-types';
-
-try {
-  matches('text', 'text/html');
-} catch (error) {
-  error.message; // => 'Invalid media range: "text"'
-  error.source; // => 'text'
-  error.startRule; // => 'media-range'
-}
-```
+**MediaTypeError** is the base class for all errors. **MediaTypeParseError** is thrown by the `parse` function
+when the parser fails unexpectedly (e.g. unknown `startRule`); it carries the `source` string, the `startRule`
+and the original error as `cause`. Syntax errors in parsed input are not errors; they are reported via `result.success`.
 
 #### Grammar
 
@@ -384,8 +416,7 @@ String(grammar);
   syntax errors. Every input valid under RFC 9110 produces exactly the same result, every input rejected by WHATWG
   is rejected as well, and inputs WHATWG recovers from are rejected as invalid.
 - **[negotiator](https://github.com/jshttp/negotiator)** media type negotiation tests (64 applicable cases) are part
-  of the test suite. Two of them rely on negotiator ignoring invalid input (`text/html;level` parameter without value,
-  `boom` as available media type), which is rejected here.
+  of the test suite and all of them pass.
 
 ## Comparison with media-typer and content-type
 

@@ -29,6 +29,20 @@ describe('selectBestMatch', function () {
     assert.isUndefined(selectBestMatch([], 'application/json'));
   });
 
+  specify('should skip invalid media ranges', function () {
+    assert.strictEqual(
+      selectBestMatch(
+        ['application/json; charset', 'garbage', 'application/*'],
+        'application/json',
+      ),
+      'application/*',
+    );
+  });
+
+  specify('should return undefined for invalid media type', function () {
+    assert.isUndefined(selectBestMatch(['*/*'], 'garbage'));
+  });
+
   specify('should accept any iterable', function () {
     assert.strictEqual(selectBestMatch(new Set(['text/*']), 'text/html'), 'text/*');
   });

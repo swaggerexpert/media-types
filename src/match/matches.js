@@ -1,7 +1,15 @@
-import { toAST, isMatch } from './utils.js';
+import { toMediaRange, toMediaType, isMatch } from './utils.js';
 
+/**
+ * Invalid media range or media type never matches.
+ */
 const matches = (mediaRange, mediaType) => {
-  return isMatch(toAST(mediaRange, 'media-range'), toAST(mediaType, 'media-type'));
+  const mediaRangeAST = toMediaRange(mediaRange);
+  const mediaTypeAST = toMediaType(mediaType);
+
+  if (mediaRangeAST === undefined || mediaTypeAST === undefined) return false;
+
+  return isMatch(mediaRangeAST, mediaTypeAST);
 };
 
 export default matches;

@@ -1,25 +1,26 @@
-import { toAST, findMostSpecific, compareSpecificity } from './utils.js';
+import { toAcceptMediaRanges, toMediaType, findMostSpecific, compareSpecificity } from './utils.js';
 
 /**
  * Orders available media types by preference expressed in the Accept field value.
- * Media types that are not acceptable (quality value of 0) are omitted.
+ * Media types that are not acceptable (quality value of 0) or invalid are omitted.
  * A request without any Accept field implies that any media type is acceptable.
  * https://www.rfc-editor.org/rfc/rfc9110#section-12.5.1
  */
 const negotiate = (accept, mediaTypes) => {
-  const values = Array.from(mediaTypes);
+  const mediaRanges = toAcceptMediaRanges(accept);
+  const candidates = Array.from(mediaTypes)
+    .map((value, index) => ({ value, index, mediaType: toMediaType(value) }))
+    .filter(({ mediaType }) => mediaType !== undefined);
 
-  if (accept === undefined) return values;
+  if (mediaRanges === undefined) return candidates.map(({ value }) => value);
 
-  const mediaRanges = toAST(accept, 'Accept');
-
-  return values
-    .map((value, index) => {
+  return candidates
+    .map((candidate) => {
       const { mediaRange, index: mediaRangeIndex } = findMostSpecific(
         mediaRanges,
-        toAST(value, 'media-type'),
+        candidate.mediaType,
       );
-      return { value, index, mediaRange, mediaRangeIndex };
+      return { ...candidate, mediaRange, mediaRangeIndex };
     })
     .filter(({ mediaRange }) => mediaRange !== undefined && mediaRange.weight > 0)
     .sort(
