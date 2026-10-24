@@ -30,17 +30,17 @@ describe('parse', function () {
             '</root>\n',
         );
       });
-    });
-  });
 
-  specify('should escape XML special characters', function () {
-    const { tree } = parse('text/html;a="</node><x>&\\"\'"', {
-      type: 'media-type',
-      translator: new XMLTranslator(),
-    });
+      specify('should escape XML special characters', function () {
+        const { tree } = parse('text/html;a="</node><x>&\\"\'"', {
+          type: 'media-type',
+          translator: new XMLTranslator(),
+        });
 
-    assert.include(tree, '&lt;/node&gt;&lt;x&gt;&amp;');
-    assert.notInclude(tree, '</node><x>');
-    assert.notMatch(tree, /&(?!amp;|lt;|gt;|quot;|apos;)/);
+        assert.include(tree, '&lt;/node&gt;&lt;x&gt;&amp;');
+        assert.notInclude(tree, '</node><x>');
+        assert.notMatch(tree, /&(?!amp;|lt;|gt;|quot;|apos;)/);
+      });
+    });
   });
 });
