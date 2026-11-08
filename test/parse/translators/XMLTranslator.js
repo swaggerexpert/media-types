@@ -13,6 +13,11 @@ describe('parse', function () {
           parseResult.tree,
           '<?xml version="1.0" encoding="utf-8"?>\n' +
             '<root nodes="4" characters="3">\n' +
+            '<!--\n' +
+            '  Caveat: AST node phrases may not be faithfully represented.\n' +
+            '          Invalid XML characters are replaced with 0xFFFD.\n' +
+            '          Special characters &<>"\' are escaped with XML entities.\n' +
+            '-->\n' +
             '<!-- input string -->\n' +
             '  a/b\n' +
             ' <node name="media-type" index="0" length="3">\n' +
@@ -37,9 +42,12 @@ describe('parse', function () {
           translator: new XMLTranslator(),
         });
 
-        assert.include(tree, '&lt;/node&gt;&lt;x&gt;&amp;');
-        assert.notInclude(tree, '</node><x>');
-        assert.notMatch(tree, /&(?!amp;|lt;|gt;|quot;|apos;)/);
+        // comments are not escaped: apg-lite's caveat comment lists the special characters as they are
+        const content = tree.replace(/<!--[\s\S]*?-->/g, '');
+
+        assert.include(content, '&lt;/node&gt;&lt;x&gt;&amp;');
+        assert.notInclude(content, '</node><x>');
+        assert.notMatch(content, /&(?!amp;|lt;|gt;|quot;|apos;)/);
       });
     });
   });
