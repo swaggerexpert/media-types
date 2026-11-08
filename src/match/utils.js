@@ -18,16 +18,64 @@ const describe = (value) => {
   return typeof value;
 };
 
+// exported for tests only, not part of the public API
+// number of kept parse results, one per string and type
+export const CACHE_MAX_ENTRIES = 500;
+// longest string kept, in UTF-16 code units (String.prototype.length)
+export const CACHE_MAX_STRING_LENGTH = 1024;
+export const INVALID = Symbol('invalid');
+export const cache = new Map();
+export const cacheKey = (value, type) => `${type}\u0000${value}`;
+
+const deepFreeze = (value) => {
+  if (typeof value === 'object' && value !== null) {
+    Object.values(value).forEach(deepFreeze);
+    Object.freeze(value);
+  }
+  return value;
+};
+
+const parseUncached = (value, type) => {
+  const parseResult = parse(value, { type });
+  return parseResult.result.success ? parseResult.tree : undefined;
+};
+
+/**
+ * Parses a string, keeping the most recently used results, invalid ones included.
+ * Matching parses the same media types and media ranges over and over, e.g. a list of
+ * supported media types against every request, and parsing is what dominates its cost.
+ * The ASTs are frozen, as they are shared by all matches of the same string.
+ * Long strings, e.g. unusual Accept field values, are not kept, which bounds the memory used.
+ */
+const parseCached = (value, type) => {
+  if (value.length > CACHE_MAX_STRING_LENGTH) return parseUncached(value, type);
+
+  const key = cacheKey(value, type);
+  const cached = cache.get(key);
+
+  if (cached !== undefined) {
+    // most recently used last
+    cache.delete(key);
+    cache.set(key, cached);
+    return cached === INVALID ? undefined : cached;
+  }
+
+  const parsed = parseUncached(value, type);
+  const tree = parsed === undefined ? undefined : deepFreeze(parsed);
+
+  cache.set(key, tree ?? INVALID);
+  if (cache.size > CACHE_MAX_ENTRIES) cache.delete(cache.keys().next().value);
+
+  return tree;
+};
+
 /**
  * Turns a string into its AST, while already parsed values pass through.
  * Returns undefined for strings that are not valid according to the type.
  * Throws TypeError for values that are neither strings nor ASTs of the type.
  */
 const toAST = (value, type) => {
-  if (typeof value === 'string') {
-    const parseResult = parse(value, { type });
-    return parseResult.result.success ? parseResult.tree : undefined;
-  }
+  if (typeof value === 'string') return parseCached(value, type);
 
   const isAST = type === 'accept' ? isAcceptAST(value) : isMediaTypeAST(value);
   if (isAST) return value;
@@ -127,10 +175,12 @@ const trimOWS = (value) => {
 
 /**
  * Recovers valid elements from an invalid Accept field value; invalid elements are dropped.
+ * The elements are not kept: an invalid Accept field value, possibly crafted, would otherwise
+ * replace every kept string, e.g. the media types an application matches requests against.
  * https://www.rfc-editor.org/rfc/rfc9110#section-2.4
  */
 const recoverAccept = (accept) =>
-  splitList(accept).flatMap((element) => toAST(trimOWS(element), 'accept') ?? []);
+  splitList(accept).flatMap((element) => parseUncached(trimOWS(element), 'accept') ?? []);
 
 /**
  * Returns usable media ranges of an Accept field value, or undefined when there is no preference.

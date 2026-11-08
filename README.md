@@ -325,6 +325,14 @@ from an HTTP message ([RFC 9110, Section 5.5](https://www.rfc-editor.org/rfc/rfc
 All matching functions accept either strings or already parsed ASTs. Strings are parsed using the strict grammar.
 Matching functions never throw on invalid input; see [Invalid input](#invalid-input).
 
+Parsing dominates the cost of matching, so matching functions keep the results of parsing the 500 most recently
+used strings, invalid ones included, in a cache shared by all calls. Matching the same media types and media ranges
+repeatedly, e.g. a list of supported media types against every request, therefore parses each of them only once.
+A string used both as a media type and as a media range takes an entry for each. Strings longer than
+1024 UTF-16 code units and the elements of `Accept` field values recovered from invalid ones aren't kept,
+which bounds the memory used even for strings from untrusted sources. Already parsed ASTs passed to matching functions
+are used as they are, and the `parse` function itself doesn't cache its results.
+
 Matching rules ([RFC 9110, Section 12.5.1](https://www.rfc-editor.org/rfc/rfc9110#section-12.5.1)):
 
 - `*/*` matches every media type, `type/*` matches every subtype of the type, otherwise type and subtype must be equal.
